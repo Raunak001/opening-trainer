@@ -6,6 +6,7 @@ describe('App', () => {
   it('renders the board test page', () => {
     render(<App />)
     expect(screen.getByRole('button', { name: 'Flip board' })).toBeInTheDocument()
+    expect(screen.getByText('Challenge 3/10')).toBeInTheDocument()
     expect(screen.getByTestId('moves')).toHaveTextContent('Start position')
   })
 })

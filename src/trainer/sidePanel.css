@@ -1,0 +1,136 @@
+/* Side panel shell. Colors mimic chess.com's dark lesson panel. */
+.side-panel {
+  --panel-bg: #262421;
+  --panel-raised: #3c3a37;
+  --panel-text: #ffffff;
+  --panel-muted: #bababa;
+  --panel-accent: #81b64c;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--panel-text);
+}
+
+.side-panel__header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.side-panel__challenge {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.side-panel__progress {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--panel-raised);
+  overflow: hidden;
+}
+
+.side-panel__progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--panel-accent);
+  transition: width 0.3s ease;
+}
+
+.side-panel__coach {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.side-panel__avatar {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  padding: 6px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--panel-raised);
+}
+
+.side-panel__bubble {
+  position: relative;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #312e2b;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+/* Bubble tail pointing at the avatar. */
+.side-panel__bubble::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: -7px;
+  border: 7px solid transparent;
+  border-left: 0;
+  border-right-color: #ffffff;
+}
+
+.side-panel__prompt {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.side-panel__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.side-panel button {
+  border: 0;
+  border-radius: 6px;
+  background: var(--panel-raised);
+  color: var(--panel-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.side-panel button:hover:not(:disabled) {
+  background: #4b4946;
+}
+
+.side-panel button:disabled {
+  color: var(--panel-muted);
+  opacity: 0.5;
+  cursor: default;
+}
+
+.side-panel button:focus-visible {
+  outline: 2px solid var(--panel-accent);
+  outline-offset: 2px;
+}
+
+.side-panel__hint {
+  flex: 1;
+  padding: 10px 16px;
+}
+
+.side-panel__nav {
+  display: flex;
+  gap: 8px;
+}
+
+.side-panel__nav-button {
+  width: 44px;
+  height: 40px;
+  font-size: 22px;
+  line-height: 1;
+}

@@ -1,21 +1,18 @@
 :root {
   font-family: system-ui, sans-serif;
-  color-scheme: light dark;
+  color-scheme: dark;
+  --page-bg: #312e2b;
+  --page-text: #ffffff;
 }
 
 body {
   margin: 0;
-}
-
-.board-test {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 16px;
+  background: var(--page-bg);
+  color: var(--page-text);
 }
 
 .board-test__controls {
-  max-width: 320px;
+  padding: 0 16px 16px;
   font-size: 14px;
   overflow-wrap: anywhere;
 }
