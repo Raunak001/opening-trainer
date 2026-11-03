@@ -1,9 +1,7 @@
+import { BoardTestPage } from './BoardTestPage'
+
 function App() {
-  return (
-    <main>
-      <h1>Opening Trainer</h1>
-    </main>
-  )
+  return <BoardTestPage />
 }
 
 export default App

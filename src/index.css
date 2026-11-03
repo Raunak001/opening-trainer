@@ -6,3 +6,16 @@
 body {
   margin: 0;
 }
+
+.board-test {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+}
+
+.board-test__controls {
+  max-width: 320px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}

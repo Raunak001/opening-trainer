@@ -1,0 +1,5 @@
+/* Sizing only; colors and pieces come in T1.2. */
+.board {
+  width: min(90vw, 90vh, 640px);
+  aspect-ratio: 1;
+}

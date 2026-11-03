@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest'
 import App from '../App'
 
 describe('App', () => {
-  it('renders the app title', () => {
+  it('renders the board test page', () => {
     render(<App />)
-    expect(screen.getByRole('heading', { name: 'Opening Trainer' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Flip board' })).toBeInTheDocument()
+    expect(screen.getByTestId('moves')).toHaveTextContent('Start position')
   })
 })
