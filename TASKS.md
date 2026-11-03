@@ -10,7 +10,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 **Phase done when:** `npm run dev` shows a page, `npm test` passes, token loads from `.env.local`.
 
 - [x] **T0.1 Scaffold** (S) — Vite `react-ts` template, TS strict, ESLint, Prettier, Vitest, `typecheck` script. Done when: all four commands in CLAUDE.md run clean.
-- [ ] **T0.2 Dependencies + engine files** (S) — install `chess.js chessground dexie dexie-react-hooks ts-fsrs stockfish`, pin versions; add a `postinstall` script that copies the lite single-threaded `.js`/`.wasm` into `public/engine/`. Done when: fresh `npm i` populates `public/engine/`.
+- [x] **T0.2 Dependencies + engine files** (S) — install `chess.js chessground dexie dexie-react-hooks ts-fsrs stockfish`, pin versions; add a `postinstall` script that copies the lite single-threaded `.js`/`.wasm` into `public/engine/`. Done when: fresh `npm i` populates `public/engine/`.
 - [ ] **T0.3 Env + folders** (S) — `.env.example` with `VITE_LICHESS_TOKEN=`, confirm `.env.local` gitignored, create `src/` folders from CLAUDE.md with an `index.ts` each. Done when: `import.meta.env.VITE_LICHESS_TOKEN` is typed (`vite-env.d.ts`) and defined at runtime.
 - **Manual (you):** create the no-scope Lichess token and put it in `.env.local`.
 
