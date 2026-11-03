@@ -143,3 +143,20 @@
 .board piece.king.black {
   background-image: url('/pieces/bK.svg');
 }
+
+/* Wrong move: red flash on the destination square before the piece snaps back. */
+.board cg-board square.wrong {
+  background-color: rgba(235, 64, 52, 0.75);
+  animation: board-wrong-flash 0.45s ease-out;
+}
+
+@keyframes board-wrong-flash {
+  from {
+    background-color: rgba(235, 64, 52, 0.95);
+  }
+}
+
+/* Hint level 1: ring the piece that should move. */
+.board cg-board square.hint {
+  box-shadow: inset 0 0 0 4px #ffaa00;
+}

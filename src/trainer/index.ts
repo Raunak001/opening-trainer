@@ -20,3 +20,6 @@ export {
   type Side,
   type Step,
 } from './drill'
+export { DrillPage } from './DrillPage'
+export { italianLine } from './sampleLines'
+export { ANIMATION_MS, OPPONENT_DELAY_MS, useDrill, WRONG_FLASH_MS } from './useDrill'

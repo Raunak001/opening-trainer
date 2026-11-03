@@ -1,7 +1,7 @@
-import { BoardTestPage } from './BoardTestPage'
+import { DrillPage } from './trainer'
 
 function App() {
-  return <BoardTestPage />
+  return <DrillPage />
 }
 
 export default App

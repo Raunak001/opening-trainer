@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest'
 import App from '../App'
 
 describe('App', () => {
-  it('renders the board test page', () => {
+  it('renders the drill page', () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: 'Flip board' })).toBeInTheDocument()
-    expect(screen.getByText('Challenge 3/10')).toBeInTheDocument()
-    expect(screen.getByTestId('moves')).toHaveTextContent('Start position')
+    expect(screen.getByText(/drill the Italian Game\. You play White/)).toBeInTheDocument()
+    expect(screen.getByText('Challenge 1/8')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Play Black' })).toBeInTheDocument()
   })
 })
