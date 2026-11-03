@@ -1,0 +1,15 @@
+cburnett chess piece set
+========================
+
+Files: wK.svg wQ.svg wR.svg wB.svg wN.svg wP.svg bK.svg bQ.svg bR.svg bB.svg bN.svg bP.svg
+
+Author: Colin M.L. Burnett (User:Cburnett on Wikimedia Commons)
+License: GNU General Public License, version 2 or later (GPLv2+)
+         https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+
+This is the "cburnett" set used by Lichess (see lila's COPYING.md, which lists it
+as GPLv2+). The SVGs here were extracted unmodified from the base64 data URIs in
+chessground's assets/chessground.cburnett.css (chessground 9.2.1, GPL-3.0-or-later,
+https://github.com/lichess-org/chessground).
+
+No chess.com assets are used.

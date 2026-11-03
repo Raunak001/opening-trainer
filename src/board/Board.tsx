@@ -1,12 +1,10 @@
 import { Chessground } from 'chessground'
 import type { Api } from 'chessground/api'
 import type { Config } from 'chessground/config'
-import type { DrawShape } from 'chessground/draw'
+import type { DrawBrush, DrawShape } from 'chessground/draw'
 import type { Color, Key } from 'chessground/types'
 import { useEffect, useRef } from 'react'
 import 'chessground/assets/chessground.base.css'
-import 'chessground/assets/chessground.brown.css'
-import 'chessground/assets/chessground.cburnett.css'
 import './board.css'
 import { inCheck, legalDests, turnColor } from './dests'
 
@@ -23,6 +21,11 @@ export interface BoardProps {
 }
 
 const EMPTY_SHAPES: DrawShape[] = []
+
+/** Brush name for hint and engine arrows: `{ orig, dest, brush: ARROW_BRUSH }`. */
+export const ARROW_BRUSH = 'orange'
+
+const ORANGE: DrawBrush = { key: 'o', color: '#ffaa00', opacity: 0.8, lineWidth: 10 }
 
 function positionConfig(fen: string, orientation: Color, lastMove?: [Key, Key]): Config {
   const turn = turnColor(fen)
@@ -64,6 +67,7 @@ export function Board({
       draggable: { showGhost: true },
       highlight: { lastMove: true, check: true },
     })
+    api.state.drawable.brushes[ARROW_BRUSH] = ORANGE
     apiRef.current = api
     return () => {
       api.destroy()

@@ -1,5 +1,145 @@
-/* Sizing only; colors and pieces come in T1.2. */
+/*
+ * Board theme: cream/green squares, inner coordinates, yellow last-move,
+ * cburnett pieces from public/pieces. Colors mimic chess.com's "green" board.
+ */
 .board {
+  --sq-light: #ebecd0;
+  --sq-dark: #739552;
+  --sq-highlight: rgba(255, 255, 51, 0.5);
+  --sq-dest: rgba(0, 0, 0, 0.14);
+
   width: min(90vw, 90vh, 640px);
   aspect-ratio: 1;
+  /* Lets coordinate text scale with the board (cqi units). */
+  container-type: inline-size;
+}
+
+/* Squares: a 2x2 tile repeated 4x4; top-left square is light in both orientations. */
+.board cg-board {
+  background-color: var(--sq-light);
+  background-image: repeating-conic-gradient(var(--sq-dark) 0 25%, var(--sq-light) 0 50%);
+  background-size: 25% 25%;
+}
+
+.board cg-board square.last-move,
+.board cg-board square.selected {
+  background-color: var(--sq-highlight);
+}
+
+/* Dots and capture rings are images so a last-move tint underneath still shows. */
+.board cg-board square.move-dest {
+  background-image: radial-gradient(closest-side, var(--sq-dest) 32%, transparent 34%);
+}
+
+.board cg-board square.move-dest.oc {
+  background-image: radial-gradient(
+    closest-side,
+    transparent 80%,
+    var(--sq-dest) 82%,
+    var(--sq-dest) 100%,
+    transparent 100%
+  );
+}
+
+.board cg-board square.move-dest:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.board cg-board square.check {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 0, 0, 1) 0%,
+    rgba(231, 0, 0, 1) 25%,
+    rgba(169, 0, 0, 0) 89%,
+    rgba(158, 0, 0, 0) 100%
+  );
+}
+
+/* Coordinates, drawn inside the edge squares. */
+.board coords {
+  opacity: 1;
+  font-family: system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 2.6cqi;
+}
+
+.board coords.ranks {
+  top: 0;
+  left: 0;
+  width: 12.5%;
+  height: 100%;
+}
+
+.board coords.ranks coord {
+  flex: 1 1 0;
+  transform: none;
+  padding: 3% 0 0 5%;
+}
+
+.board coords.files {
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 12.5%;
+  align-items: flex-end;
+  text-transform: lowercase;
+}
+
+.board coords.files coord {
+  flex: 1 1 0;
+  text-align: right;
+  padding: 0 0.8% 0.6% 0;
+}
+
+/*
+ * Each label takes the opposite color of its square. With white at the bottom,
+ * a1 is dark, so odd labels (1, 3, ... / a, c, ...) sit on dark squares; flipped,
+ * the edge squares are h1..h8 and a8..h8, so the parity inverts.
+ */
+.board coords coord:nth-child(odd),
+.board coords.black coord:nth-child(even) {
+  color: var(--sq-light);
+}
+
+.board coords coord:nth-child(even),
+.board coords.black coord:nth-child(odd) {
+  color: var(--sq-dark);
+}
+
+/* Pieces: cburnett set, see public/pieces/LICENSE. */
+.board piece.pawn.white {
+  background-image: url('/pieces/wP.svg');
+}
+.board piece.knight.white {
+  background-image: url('/pieces/wN.svg');
+}
+.board piece.bishop.white {
+  background-image: url('/pieces/wB.svg');
+}
+.board piece.rook.white {
+  background-image: url('/pieces/wR.svg');
+}
+.board piece.queen.white {
+  background-image: url('/pieces/wQ.svg');
+}
+.board piece.king.white {
+  background-image: url('/pieces/wK.svg');
+}
+.board piece.pawn.black {
+  background-image: url('/pieces/bP.svg');
+}
+.board piece.knight.black {
+  background-image: url('/pieces/bN.svg');
+}
+.board piece.bishop.black {
+  background-image: url('/pieces/bB.svg');
+}
+.board piece.rook.black {
+  background-image: url('/pieces/bR.svg');
+}
+.board piece.queen.black {
+  background-image: url('/pieces/bQ.svg');
+}
+.board piece.king.black {
+  background-image: url('/pieces/bK.svg');
 }
