@@ -30,7 +30,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 **Phase done when:** 1.e4 at 1600–1800 blitz/rapid builds a tree under ~300 positions; rebuilding makes zero network calls.
 
 - [x] **T2.1 Explorer client + cache** (M) — sequential queue, Bearer token, 429 → 60s backoff, Dexie cache by position key + params, mockable fetch. Done when: unit tests for queueing, backoff, cache hit.
-- [ ] **T2.2 CORS check** (S) — try from the browser; if blocked, add Vite proxy with header injection. Done when: live call succeeds from `npm run dev`.
+- [x] **T2.2 CORS check** (S) — try from the browser; if blocked, add Vite proxy with header injection. Done when: live call succeeds from `npm run dev`.
 - [ ] **T2.3 Tree model** (M) — nodes keyed by position key, edges with SAN + counts + W/D/B; transposition merging. Done when: test proves two move orders reach one node.
 - [ ] **T2.4a Pruning algorithm** (M) — pure function over explorer responses using CLAUDE.md defaults + max depth. Done when: fixture-based tests for user-move choice, coverage cutoff, floor cutoff.
 - [ ] **T2.4b Builder run** (M) — BFS over the tree calling the client, progress callback, cancellable, persists tree. Done when: phase check passes.

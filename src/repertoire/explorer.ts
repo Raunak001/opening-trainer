@@ -1,6 +1,12 @@
 import { getDb, type TrainerDB } from '../db'
 import { positionKey, type PositionKey } from './positionKey'
 
+/**
+ * Called directly from the browser: no Vite proxy needed. T2.2 (2026-11-06) checked that the
+ * preflight returns `Access-Control-Allow-Origin: *` with `Authorization` in the allowed
+ * headers, and a live call from `npm run dev` returned 200. If that ever changes, add a
+ * `server.proxy` entry in vite.config.ts and point `baseUrl` at it.
+ */
 export const EXPLORER_URL = 'https://explorer.lichess.ovh/lichess'
 /** CLAUDE.md: on 429, wait 60s before retrying. */
 export const RATE_LIMIT_BACKOFF_MS = 60_000
