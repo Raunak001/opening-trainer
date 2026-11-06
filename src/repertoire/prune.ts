@@ -17,12 +17,16 @@ export interface PruneSettings {
   maxPly: number
 }
 
-/** CLAUDE.md defaults. maxPly is a starting guess; T2.4b tunes it to the ~300-position target. */
+/**
+ * CLAUDE.md defaults. maxPly measured in T2.4b (1.e4, White, blitz+rapid, 1600+1800):
+ * 6 → 124 positions; 8 → ~440. 6 is the deepest that meets the ~300-position target.
+ * For White, odd values behave like the even value below (and vice versa for Black).
+ */
 export const DEFAULT_PRUNE_SETTINGS: PruneSettings = {
   userMinShare: 0.05,
   opponentCoverage: 0.85,
   opponentMinShare: 0.03,
-  maxPly: 12,
+  maxPly: 6,
 }
 
 export interface SelectedMove {

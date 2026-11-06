@@ -56,3 +56,14 @@ export {
   type Selection,
   type StopReason,
 } from './prune'
+export {
+  buildAndSave,
+  buildRepertoire,
+  listRepertoires,
+  loadRepertoire,
+  saveRepertoire,
+  type BuildOptions,
+  type BuildProgress,
+  type BuildResult,
+  type SaveRepertoireInput,
+} from './builder'
