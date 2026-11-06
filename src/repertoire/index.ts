@@ -85,3 +85,14 @@ export {
   type ValidBuild,
 } from './builderForm'
 export { BuilderPage, type BuilderPageProps } from './BuilderPage'
+export {
+  buildOpeningIndex,
+  labelTree,
+  loadOpeningIndex,
+  openingFor,
+  parseOpeningsTsv,
+  sansFromPgn,
+  type Opening,
+  type OpeningIndex,
+  type OpeningLabel,
+} from './openings'
