@@ -1,0 +1,256 @@
+/* Repertoire builder. Same dark palette as the trainer side panel. */
+.builder {
+  --panel-bg: #262421;
+  --panel-raised: #3c3a37;
+  --panel-hover: #4b4946;
+  --panel-text: #ffffff;
+  --panel-muted: #bababa;
+  --panel-accent: #81b64c;
+  --panel-accent-hover: #a3d160;
+  --panel-error: #fa7c7c;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+}
+
+.builder h1,
+.builder h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.builder h2 {
+  font-size: 16px;
+}
+
+.builder__form,
+.builder__saved {
+  box-sizing: border-box;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--panel-bg);
+}
+
+.builder__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(560px, 100%);
+}
+
+.builder__saved {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 300px;
+}
+
+.builder fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.builder__header,
+.builder__footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.builder__header {
+  justify-content: space-between;
+}
+
+.builder__field,
+.builder__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.builder__label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.builder__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.builder__row--numbers {
+  align-items: flex-start;
+}
+
+.builder__row--numbers > .builder__field {
+  flex: 1 1 140px;
+}
+
+.builder input[type='text'],
+.builder input[type='number'],
+.builder select {
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--panel-raised);
+  color: var(--panel-text);
+  font: inherit;
+}
+
+.builder input[type='text'] {
+  width: 100%;
+}
+
+.builder input[type='number'] {
+  width: 100%;
+}
+
+.builder input:focus-visible,
+.builder select:focus-visible,
+.builder button:focus-visible,
+.builder__segmented label:has(input:focus-visible),
+.builder__chips label:has(input:focus-visible) {
+  outline: 2px solid var(--panel-accent);
+  outline-offset: 2px;
+}
+
+/* Segmented color picker and speed chips: native inputs, visually hidden. */
+.builder__segmented,
+.builder__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.builder__segmented label,
+.builder__chips label {
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: var(--panel-raised);
+  color: var(--panel-muted);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.builder__segmented label:hover,
+.builder__chips label:hover {
+  background: var(--panel-hover);
+}
+
+.builder__segmented label.is-selected,
+.builder__chips label.is-selected {
+  background: var(--panel-accent);
+  color: #ffffff;
+}
+
+.builder__segmented input,
+.builder__chips input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.builder fieldset:disabled label {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.builder button {
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--panel-raised);
+  color: var(--panel-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.builder button:hover:not(:disabled) {
+  background: var(--panel-hover);
+}
+
+.builder button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.builder .builder__primary {
+  background: var(--panel-accent);
+}
+
+.builder .builder__primary:hover:not(:disabled) {
+  background: var(--panel-accent-hover);
+}
+
+.builder__muted,
+.builder__error,
+.builder__status {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.builder__muted {
+  color: var(--panel-muted);
+}
+
+.builder__error,
+.builder__status--error {
+  color: var(--panel-error);
+}
+
+.builder__status--done {
+  color: var(--panel-accent);
+}
+
+.builder__saved ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.builder__saved li button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+}
+
+.builder__saved li button[aria-current='true'] {
+  box-shadow: inset 3px 0 0 var(--panel-accent);
+}
+
+.builder__saved-name {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+  .builder {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .builder__form,
+  .builder__saved {
+    width: 100%;
+  }
+}
