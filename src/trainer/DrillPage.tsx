@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Board } from '../board'
-import type { Line, Side } from './drill'
-import { italianLine } from './sampleLines'
+import type { Line } from './drill'
+import { SAMPLE_LINES } from './sampleLines'
 import { SidePanel } from './SidePanel'
 import { TrainerLayout } from './TrainerLayout'
 import { useDrill } from './useDrill'
@@ -23,21 +23,27 @@ function Drill({ line }: { line: Line }) {
   )
 }
 
-/** Drill a hardcoded line; pick a side to restart as that color. */
+const label = (line: Line) => `${line.name} (${line.side === 'white' ? 'White' : 'Black'})`
+
+/** Drill one of the hardcoded lines. */
 export function DrillPage() {
-  const [side, setSide] = useState<Side>('white')
-  const line = italianLine(side)
+  const [lineId, setLineId] = useState(SAMPLE_LINES[0].id)
+  const line = SAMPLE_LINES.find((l) => l.id === lineId) ?? SAMPLE_LINES[0]
   return (
     <>
-      {/* Keyed so switching side starts a fresh drill. */}
+      {/* Keyed so picking another line starts a fresh drill. */}
       <Drill key={line.id} line={line} />
-      <div className="drill-controls" role="group" aria-label="Play as">
-        <button type="button" aria-pressed={side === 'white'} onClick={() => setSide('white')}>
-          Play White
-        </button>
-        <button type="button" aria-pressed={side === 'black'} onClick={() => setSide('black')}>
-          Play Black
-        </button>
+      <div className="drill-controls">
+        <label>
+          Line{' '}
+          <select value={line.id} onChange={(e) => setLineId(e.target.value)}>
+            {SAMPLE_LINES.map((l) => (
+              <option key={l.id} value={l.id}>
+                {label(l)}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
     </>
   )

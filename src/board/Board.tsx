@@ -3,17 +3,29 @@ import type { Api } from 'chessground/api'
 import type { Config } from 'chessground/config'
 import type { DrawBrush, DrawShape } from 'chessground/draw'
 import type { Color, Key, SquareClasses } from 'chessground/types'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import 'chessground/assets/chessground.base.css'
 import './board.css'
-import { inCheck, legalDests, turnColor } from './dests'
+import {
+  inCheck,
+  isPromotion,
+  legalDests,
+  normalizeCastle,
+  turnColor,
+  type PromotionPiece,
+} from './dests'
+import { PromotionPicker } from './PromotionPicker'
 
 export interface BoardProps {
   /** Position to show. The parent owns it: apply the move in `onMove` and pass the new FEN back. */
   fen: string
   orientation?: Color
-  /** Called after the user drops a piece on a legal square. */
-  onMove?: (orig: Key, dest: Key) => void
+  /**
+   * Called after the user drops a piece on a legal square. Castling always arrives as the
+   * king's real move (e1g1), even when the king was dropped on its rook. Promotions arrive
+   * once the user picks a piece; cancelling the picker restores the position silently.
+   */
+  onMove?: (orig: Key, dest: Key, promotion?: PromotionPiece) => void
   /** Programmatic arrows/circles (hints, engine lines). Not erasable by the user. */
   shapes?: DrawShape[]
   /** Squares to highlight as the last move, e.g. after an opponent reply. */
@@ -61,12 +73,17 @@ export function Board({
 }: BoardProps) {
   const elRef = useRef<HTMLDivElement>(null)
   const apiRef = useRef<Api | null>(null)
-  // Read through a ref so a new callback each render doesn't rebuild the board.
-  const onMoveRef = useRef(onMove)
+  const [promotion, setPromotion] = useState<{ orig: Key; dest: Key } | null>(null)
 
+  // chessground keeps the handler from mount; route it through a ref so it sees fresh props.
+  const handleMoveRef = useRef<(orig: Key, dest: Key) => void>(() => {})
   useEffect(() => {
-    onMoveRef.current = onMove
-  }, [onMove])
+    handleMoveRef.current = (orig, dest) => {
+      const to = normalizeCastle(fen, orig, dest)
+      if (isPromotion(fen, orig, to)) setPromotion({ orig, dest: to })
+      else onMove?.(orig, to)
+    }
+  }, [fen, onMove])
 
   useEffect(() => {
     if (!elRef.current) return
@@ -74,7 +91,7 @@ export function Board({
       movable: {
         free: false,
         showDests: true,
-        events: { after: (orig, dest) => onMoveRef.current?.(orig, dest) },
+        events: { after: (orig, dest) => handleMoveRef.current(orig, dest) },
       },
       premovable: { enabled: false },
       draggable: { showGhost: true },
@@ -88,12 +105,14 @@ export function Board({
     }
   }, [])
 
+  // Also re-runs when the picker closes, which restores the position after a cancel.
+  const canMove = interactive && !promotion
   useEffect(() => {
     const api = apiRef.current
     if (!api) return
-    if (!interactive) api.selectSquare(null)
-    api.set(positionConfig(fen, orientation, interactive, lastMove))
-  }, [fen, orientation, interactive, lastMove])
+    if (!canMove) api.selectSquare(null)
+    api.set(positionConfig(fen, orientation, canMove, lastMove))
+  }, [fen, orientation, canMove, lastMove])
 
   useEffect(() => {
     apiRef.current?.set({ highlight: { custom: squareClasses } })
@@ -103,5 +122,21 @@ export function Board({
     apiRef.current?.setAutoShapes(shapes)
   }, [shapes])
 
-  return <div ref={elRef} className="board" />
+  return (
+    <div className="board">
+      <div ref={elRef} className="board__ground" />
+      {promotion && (
+        <PromotionPicker
+          color={turnColor(fen)}
+          dest={promotion.dest}
+          orientation={orientation}
+          onPick={(piece) => {
+            setPromotion(null)
+            onMove?.(promotion.orig, promotion.dest, piece)
+          }}
+          onCancel={() => setPromotion(null)}
+        />
+      )}
+    </div>
+  )
 }

@@ -12,6 +12,12 @@
   aspect-ratio: 1;
   /* Lets coordinate text scale with the board (cqi units). */
   container-type: inline-size;
+  position: relative;
+}
+
+.board__ground {
+  width: 100%;
+  height: 100%;
 }
 
 /* Squares: a 2x2 tile repeated 4x4; top-left square is light in both orientations. */
@@ -159,4 +165,71 @@
 /* Hint level 1: ring the piece that should move. */
 .board cg-board square.hint {
   box-shadow: inset 0 0 0 4px #ffaa00;
+}
+
+/* Promotion picker: a column of pieces over the promotion square. */
+.promotion {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.promotion__column {
+  position: absolute;
+  display: flex;
+  width: 12.5%;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.promotion__column--top {
+  top: 0;
+  flex-direction: column;
+}
+
+/* At the bottom edge the first choice sits on the promotion square, so stack upward. */
+.promotion__column--bottom {
+  bottom: 0;
+  flex-direction: column-reverse;
+}
+
+.promotion__piece,
+.promotion__cancel {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.promotion__piece {
+  aspect-ratio: 1;
+}
+
+.promotion__piece img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.promotion__piece:hover,
+.promotion__piece:focus-visible {
+  background: #e8e8e8;
+  outline: none;
+}
+
+.promotion__cancel {
+  height: 6cqi;
+  background: #f1f1f1;
+  color: #666666;
+  font-size: 3.5cqi;
+  line-height: 1;
+}
+
+.promotion__cancel:hover {
+  background: #e0e0e0;
 }

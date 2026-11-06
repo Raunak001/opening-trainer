@@ -1,8 +1,8 @@
-import { Chess, type Square } from 'chess.js'
+import { Chess } from 'chess.js'
 import type { DrawShape } from 'chessground/draw'
 import type { Key, SquareClasses } from 'chessground/types'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ARROW_BRUSH, type BoardProps } from '../board'
+import { ARROW_BRUSH, type BoardProps, type PromotionPiece } from '../board'
 import {
   createDrill,
   expectedMove,
@@ -29,14 +29,6 @@ interface WrongMove {
 
 const NO_SHAPES: DrawShape[] = []
 const NO_CLASSES: SquareClasses = new Map()
-
-/** Auto-queen until the promotion picker lands (T1.5). */
-function withPromotion(fen: string, from: Key, to: Key) {
-  const isPromotion = new Chess(fen)
-    .moves({ square: from as Square, verbose: true })
-    .some((m) => m.to === to && m.promotion)
-  return { from, to, promotion: isPromotion ? 'q' : undefined }
-}
 
 function sideName(side: Line['side']) {
   return side === 'white' ? 'White' : 'Black'
@@ -82,8 +74,8 @@ export function useDrill(line: Line) {
   }, [drill.status, drill.ply, later])
 
   const onMove = useCallback(
-    (from: Key, to: Key) => {
-      const input = withPromotion(drill.fen, from, to)
+    (from: Key, to: Key, promotion?: PromotionPiece) => {
+      const input = { from, to, promotion }
       const { state, result } = submitMove(drill, input)
       if (result === 'correct') {
         setDrill(state)

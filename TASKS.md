@@ -23,7 +23,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 - [x] **T1.3 Side panel shell** (M) — coach bubble, prompt text, "Challenge n/N", progress bar, hint, back/forward. Static props only. Done when: renders beside the board at desktop and narrow widths.
 - [x] **T1.4a Drill engine (logic)** (M) — pure state machine: `Line` type (SAN), expected-move check, opponent auto-reply, miss counter, hint state. Unit-tested. Done when: tests cover correct, wrong once, wrong twice, line complete.
 - [x] **T1.4b Drill loop (UI)** (M) — wire state machine to board + panel: delayed opponent moves, red flash + snap back, arrow on second miss, input locked during animation. Done when: phase check passes.
-- [ ] **T1.5 Edge cases** (S) — promotion picker, castling by king drag, en passant. Done when: a test line with each plays correctly.
+- [x] **T1.5 Edge cases** (S) — promotion picker, castling by king drag, en passant. Done when: a test line with each plays correctly.
 
 ## Phase 2 — Repertoire builder
 

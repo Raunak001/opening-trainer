@@ -21,5 +21,5 @@ export {
   type Step,
 } from './drill'
 export { DrillPage } from './DrillPage'
-export { italianLine } from './sampleLines'
+export { italianLine, SAMPLE_LINES, SPECIAL_MOVE_LINES } from './sampleLines'
 export { ANIMATION_MS, OPPONENT_DELAY_MS, useDrill, WRONG_FLASH_MS } from './useDrill'
