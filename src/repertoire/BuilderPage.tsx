@@ -288,8 +288,7 @@ export function BuilderPage({ db: dbProp, client: clientProp }: BuilderPageProps
                   <span className="builder__saved-name">{r.name}</span>
                   <span className="builder__muted">
                     {r.color === 'white' ? 'White' : 'Black'} ·{' '}
-                    {formatLine(r.startMoves) || 'start'} · {Object.keys(r.tree.nodes).length}{' '}
-                    positions
+                    {formatLine(r.startMoves) || 'start'} · {r.positionCount} positions
                   </span>
                 </button>
               </li>

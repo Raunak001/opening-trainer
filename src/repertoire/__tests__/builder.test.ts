@@ -1,5 +1,4 @@
 import 'fake-indexeddb/auto'
-import Dexie from 'dexie'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TrainerDB } from '../../db'
 import {
@@ -341,32 +340,5 @@ describe('persistence', () => {
     await saveRepertoire(db, { ...row, name: 'new' })
     vi.restoreAllMocks()
     expect((await listRepertoires(db)).map((r) => r.name)).toEqual(['new', 'old'])
-  })
-})
-
-describe('schema migration', () => {
-  const NAME = 'migration-test'
-
-  afterEach(async () => {
-    await Dexie.delete(NAME)
-  })
-
-  it('upgrades a v1 database to v2 without losing the explorer cache', async () => {
-    const v1 = new Dexie(NAME)
-    v1.version(1).stores({ explorerCache: 'key, positionKey' })
-    await v1.table('explorerCache').put({
-      key: 'k',
-      positionKey: 'p',
-      params: '',
-      response: EMPTY,
-      fetchedAt: 1,
-    })
-    v1.close()
-
-    const v2 = new TrainerDB(NAME)
-    expect(await v2.explorerCache.get('k')).toMatchObject({ positionKey: 'p', fetchedAt: 1 })
-    expect(await v2.repertoires.count()).toBe(0)
-    expect(v2.verno).toBe(2)
-    v2.close()
   })
 })

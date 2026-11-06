@@ -65,6 +65,7 @@ export {
   type BuildOptions,
   type BuildProgress,
   type BuildResult,
+  type Repertoire,
   type SaveRepertoireInput,
 } from './builder'
 export {

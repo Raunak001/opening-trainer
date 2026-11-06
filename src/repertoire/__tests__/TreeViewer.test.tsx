@@ -117,7 +117,8 @@ describe('TreeViewer', () => {
     fireEvent.click(within(panel).getByRole('button', { name: /2\.Bc4/ }))
 
     expect(await screen.findByText('Now playing 2.Bc4.')).toBeInTheDocument()
-    expect(screen.queryByText('2.Nf3')).not.toBeInTheDocument()
+    // The tree reloads from the nodes table just after the save.
+    await waitFor(() => expect(screen.queryByText('2.Nf3')).not.toBeInTheDocument())
     expect(row('2.Bc4')).toHaveTextContent('your choice')
     expect(row('2…Nf6')).toBeInTheDocument() // the swapped line opens
     expect(screen.getByText(/1 changed by you/)).toBeInTheDocument()
@@ -135,7 +136,7 @@ describe('TreeViewer', () => {
     fireEvent.click(within(panel).getByRole('button', { name: /2\.Nf3/ }))
 
     expect(await screen.findByText('Back to the automatic pick, 2.Nf3.')).toBeInTheDocument()
-    expect(row('2.Nf3')).not.toHaveTextContent('your choice')
+    await waitFor(() => expect(row('2.Nf3')).not.toHaveTextContent('your choice'))
     expect((await database.repertoires.toArray())[0].overrides).toEqual({})
   })
 
@@ -145,7 +146,7 @@ describe('TreeViewer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reset changes' }))
 
     expect(await screen.findByText('All your changes were cleared.')).toBeInTheDocument()
-    expect(row('2.Nf3')).toBeInTheDocument()
+    await waitFor(() => expect(row('2.Nf3')).toBeInTheDocument())
     expect(screen.queryByRole('button', { name: 'Reset changes' })).not.toBeInTheDocument()
     expect((await database.repertoires.toArray())[0].overrides).toEqual({})
   })

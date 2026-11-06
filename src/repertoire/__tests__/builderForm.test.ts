@@ -133,7 +133,8 @@ describe('formFromRow', () => {
       ratings: [1800, 1400, 1600],
       settings: { userMinShare: 0.07, opponentCoverage: 0.9, opponentMinShare: 0.02, maxPly: 9 },
       overrides: { 'some-key': 'Nf3' },
-      tree: createTree(),
+      rootKey: createTree().rootKey,
+      positionCount: 1,
       createdAt: 1,
       updatedAt: 2,
     }

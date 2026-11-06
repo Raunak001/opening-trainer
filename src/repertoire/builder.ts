@@ -1,4 +1,4 @@
-import type { RepertoireRow, TrainerDB } from '../db'
+import { nodeId, type NodeRow, type RepertoireRow, type TrainerDB } from '../db'
 import type { ExplorerClient, ExplorerQuery, RatingBucket, Speed } from './explorer'
 import type { PositionKey } from './positionKey'
 import {
@@ -16,6 +16,7 @@ import {
   TreeError,
   type GameStats,
   type RepertoireTree,
+  type TreeNode,
 } from './tree'
 
 export interface BuildOptions {
@@ -162,20 +163,43 @@ export async function buildRepertoire(options: BuildOptions): Promise<BuildResul
   return { tree, lookups, appliedOverrides }
 }
 
-export interface SaveRepertoireInput extends Omit<RepertoireRow, 'id' | 'createdAt' | 'updatedAt'> {
-  /** Existing id to overwrite (rebuild); omitted → new repertoire. */
-  id?: string
+/** A repertoire with its tree assembled from the `nodes` table. */
+export interface Repertoire extends RepertoireRow {
+  tree: RepertoireTree
 }
 
-/** Inserts or replaces a repertoire, keeping its original creation time. */
+export interface SaveRepertoireInput extends Omit<
+  RepertoireRow,
+  'id' | 'createdAt' | 'updatedAt' | 'rootKey' | 'positionCount'
+> {
+  /** Existing id to overwrite (rebuild); omitted → new repertoire. */
+  id?: string
+  tree: RepertoireTree
+}
+
+/**
+ * Inserts or replaces a repertoire and its tree in one transaction, keeping
+ * the original creation time. Replacing drops the old tree's node rows.
+ * Cards are left alone: review history outlives rebuilds.
+ */
 export async function saveRepertoire(db: TrainerDB, input: SaveRepertoireInput): Promise<string> {
   const now = Date.now()
   const id = input.id ?? crypto.randomUUID()
-  return db.transaction('rw', db.repertoires, async () => {
+  const { tree, ...definition } = input
+  const nodes: NodeRow[] = Object.values(tree.nodes).map((n) => ({
+    ...n,
+    id: nodeId(id, n.key),
+    repertoireId: id,
+  }))
+  return db.transaction('rw', db.repertoires, db.nodes, async () => {
     const existing = await db.repertoires.get(id)
+    await db.nodes.where('repertoireId').equals(id).delete()
+    await db.nodes.bulkPut(nodes)
     await db.repertoires.put({
-      ...input,
+      ...definition,
       id,
+      rootKey: tree.rootKey,
+      positionCount: nodes.length,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     })
@@ -183,19 +207,34 @@ export async function saveRepertoire(db: TrainerDB, input: SaveRepertoireInput):
   })
 }
 
-export function loadRepertoire(db: TrainerDB, id: string): Promise<RepertoireRow | undefined> {
-  return db.repertoires.get(id)
+/** The tree node stored in a row, without the row's own id fields. */
+function nodeFromRow(r: NodeRow): TreeNode {
+  const { key, fen, ply, edges, parents, white, draws, black } = r
+  return { key, fen, ply, edges, parents, white, draws, black }
 }
 
+/** A repertoire with its tree, or undefined if there is no such id. */
+export async function loadRepertoire(db: TrainerDB, id: string): Promise<Repertoire | undefined> {
+  return db.transaction('r', db.repertoires, db.nodes, async () => {
+    const row = await db.repertoires.get(id)
+    if (!row) return undefined
+    const nodeRows = await db.nodes.where('repertoireId').equals(id).toArray()
+    const nodes: RepertoireTree['nodes'] = {}
+    for (const r of nodeRows) nodes[r.key] = nodeFromRow(r)
+    return { ...row, tree: { rootKey: row.rootKey, nodes } }
+  })
+}
+
+/** Repertoire definitions, newest first. Trees are not loaded. */
 export function listRepertoires(db: TrainerDB): Promise<RepertoireRow[]> {
   return db.repertoires.orderBy('updatedAt').reverse().toArray()
 }
 
-/** Builds with `options` and saves the result; returns the saved row. */
+/** Builds with `options` and saves the result; returns the saved repertoire. */
 export async function buildAndSave(
   db: TrainerDB,
   options: BuildOptions & { name: string; id?: string },
-): Promise<RepertoireRow> {
+): Promise<Repertoire> {
   const settings = options.settings ?? DEFAULT_PRUNE_SETTINGS
   const { tree } = await buildRepertoire({ ...options, settings })
   const id = await saveRepertoire(db, {
@@ -209,5 +248,5 @@ export async function buildAndSave(
     overrides: { ...options.overrides },
     tree,
   })
-  return (await loadRepertoire(db, id)) as RepertoireRow
+  return (await loadRepertoire(db, id)) as Repertoire
 }

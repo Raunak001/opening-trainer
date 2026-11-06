@@ -1,0 +1,55 @@
+import type { TrainerDB } from './db'
+
+/**
+ * App-wide tunables. CLAUDE.md: grading thresholds live here, not in constants.
+ * Stored as one document; fields missing from storage use these defaults, so
+ * later tickets can add settings without a schema change.
+ */
+export interface AppSettings {
+  grading: {
+    /** Slower than this (or a hint used) → Hard. */
+    hardAfterMs: number
+    /** Faster than this → Easy. */
+    easyUnderMs: number
+  }
+  fsrs: {
+    requestRetention: number
+  }
+  daily: {
+    newCards: number
+    reviews: number
+  }
+}
+
+export const DEFAULT_SETTINGS: AppSettings = {
+  grading: { hardAfterMs: 15_000, easyUnderMs: 2_000 },
+  fsrs: { requestRetention: 0.9 },
+  daily: { newCards: 20, reviews: 200 },
+}
+
+export type SettingsPatch = { [K in keyof AppSettings]?: Partial<AppSettings[K]> }
+
+const SETTINGS_ID = 'app'
+
+/** Stored settings over defaults, one level deep. */
+export function mergeSettings(base: AppSettings, patch: SettingsPatch | undefined): AppSettings {
+  return {
+    grading: { ...base.grading, ...patch?.grading },
+    fsrs: { ...base.fsrs, ...patch?.fsrs },
+    daily: { ...base.daily, ...patch?.daily },
+  }
+}
+
+export async function getSettings(db: TrainerDB): Promise<AppSettings> {
+  const row = await db.settings.get(SETTINGS_ID)
+  return mergeSettings(DEFAULT_SETTINGS, row)
+}
+
+/** Applies a partial change and returns the full settings after it. */
+export async function updateSettings(db: TrainerDB, patch: SettingsPatch): Promise<AppSettings> {
+  return db.transaction('rw', db.settings, async () => {
+    const next = mergeSettings(await getSettings(db), patch)
+    await db.settings.put({ id: SETTINGS_ID, ...next })
+    return next
+  })
+}

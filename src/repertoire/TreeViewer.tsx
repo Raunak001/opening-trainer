@@ -1,7 +1,14 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { getDb, type RepertoireRow, type TrainerDB } from '../db'
-import { buildAndSave, explorerQueryFor, listRepertoires, type BuildProgress } from './builder'
+import { getDb, type TrainerDB } from '../db'
+import {
+  buildAndSave,
+  explorerQueryFor,
+  listRepertoires,
+  loadRepertoire,
+  type BuildProgress,
+  type Repertoire,
+} from './builder'
 import { getExplorerClient, type ExplorerClient } from './explorer'
 import { labelTree, loadOpeningIndex, type OpeningLabel } from './openings'
 import type { PositionKey } from './positionKey'
@@ -45,6 +52,11 @@ export function TreeViewer({ db: dbProp, client: clientProp }: TreeViewerProps) 
   const rows = useLiveQuery(() => listRepertoires(db), [db])
   const [selectedId, setSelectedId] = useState<string>()
   const row = rows?.find((r) => r.id === selectedId) ?? rows?.[0]
+  // The tree comes from the nodes table; live, so rebuilds re-render it.
+  const repertoire = useLiveQuery(
+    () => (row ? loadRepertoire(db, row.id) : undefined),
+    [db, row?.id, row?.updatedAt],
+  )
 
   if (rows === undefined) return null
   if (!row)
@@ -69,7 +81,9 @@ export function TreeViewer({ db: dbProp, client: clientProp }: TreeViewerProps) 
         </label>
       </header>
       {/* Keyed so expansion and open panels reset when switching repertoires. */}
-      <RepertoireTree key={row.id} row={row} db={db} client={client} />
+      {repertoire?.id === row.id && (
+        <RepertoireTree key={row.id} row={repertoire} db={db} client={client} />
+      )}
     </main>
   )
 }
@@ -79,7 +93,7 @@ function RepertoireTree({
   db,
   client,
 }: {
-  row: RepertoireRow
+  row: Repertoire
   db: TrainerDB
   client: ExplorerClient | null
 }) {
@@ -240,7 +254,7 @@ function RepertoireTree({
 }
 
 interface TreeContext {
-  row: RepertoireRow
+  row: Repertoire
   labels: Record<PositionKey, OpeningLabel>
   expanded: Set<PositionKey>
   overrides: Record<PositionKey, string>
