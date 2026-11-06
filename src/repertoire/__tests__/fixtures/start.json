@@ -1,0 +1,152 @@
+{
+  "white": 941117843,
+  "draws": 83704181,
+  "black": 872918718,
+  "moves": [
+    {
+      "uci": "e2e4",
+      "san": "e4",
+      "white": 571695617,
+      "draws": 50085242,
+      "black": 538755699,
+      "averageRating": 1785,
+      "opening": {
+        "eco": "B00",
+        "name": "King's Pawn Game"
+      }
+    },
+    {
+      "uci": "d2d4",
+      "san": "d4",
+      "white": 245268951,
+      "draws": 22426827,
+      "black": 219929485,
+      "averageRating": 1795,
+      "opening": {
+        "eco": "A40",
+        "name": "Queen's Pawn Game"
+      }
+    },
+    {
+      "uci": "c2c4",
+      "san": "c4",
+      "white": 33913517,
+      "draws": 3092876,
+      "black": 29778345,
+      "averageRating": 1805,
+      "opening": {
+        "eco": "A10",
+        "name": "English Opening"
+      }
+    },
+    {
+      "uci": "g1f3",
+      "san": "Nf3",
+      "white": 28233867,
+      "draws": 2588594,
+      "black": 24553972,
+      "averageRating": 1807,
+      "opening": {
+        "eco": "A04",
+        "name": "Zukertort Opening"
+      }
+    },
+    {
+      "uci": "e2e3",
+      "san": "e3",
+      "white": 11219202,
+      "draws": 999375,
+      "black": 11821176,
+      "averageRating": 1760,
+      "opening": {
+        "eco": "A00",
+        "name": "Van't Kruijs Opening"
+      }
+    },
+    {
+      "uci": "g2g3",
+      "san": "g3",
+      "white": 10579639,
+      "draws": 1022332,
+      "black": 10184828,
+      "averageRating": 1777,
+      "opening": {
+        "eco": "A00",
+        "name": "Hungarian Opening"
+      }
+    },
+    {
+      "uci": "f2f4",
+      "san": "f4",
+      "white": 10654834,
+      "draws": 893644,
+      "black": 9616295,
+      "averageRating": 1808,
+      "opening": {
+        "eco": "A02",
+        "name": "Bird Opening"
+      }
+    },
+    {
+      "uci": "b2b3",
+      "san": "b3",
+      "white": 9886240,
+      "draws": 884351,
+      "black": 9253012,
+      "averageRating": 1787,
+      "opening": {
+        "eco": "A01",
+        "name": "Nimzo-Larsen Attack"
+      }
+    },
+    {
+      "uci": "b2b4",
+      "san": "b4",
+      "white": 5099364,
+      "draws": 422014,
+      "black": 4370563,
+      "averageRating": 1789,
+      "opening": {
+        "eco": "A00",
+        "name": "Polish Opening"
+      }
+    },
+    {
+      "uci": "d2d3",
+      "san": "d3",
+      "white": 4164754,
+      "draws": 394560,
+      "black": 4346630,
+      "averageRating": 1778,
+      "opening": {
+        "eco": "A00",
+        "name": "Mieses Opening"
+      }
+    },
+    {
+      "uci": "b1c3",
+      "san": "Nc3",
+      "white": 3179692,
+      "draws": 279561,
+      "black": 2981878,
+      "averageRating": 1792,
+      "opening": {
+        "eco": "A00",
+        "name": "Van Geet Opening"
+      }
+    },
+    {
+      "uci": "g2g4",
+      "san": "g4",
+      "white": 2826294,
+      "draws": 207837,
+      "black": 2633204,
+      "averageRating": 1789,
+      "opening": {
+        "eco": "A00",
+        "name": "Grob Opening"
+      }
+    }
+  ],
+  "opening": null
+}

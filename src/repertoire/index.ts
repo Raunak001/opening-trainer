@@ -45,3 +45,14 @@ export {
   type TreeEdge,
   type TreeNode,
 } from './tree'
+export {
+  DEFAULT_PRUNE_SETTINGS,
+  scoreFor,
+  selectMoves,
+  withinDepth,
+  type Color,
+  type PruneSettings,
+  type SelectedMove,
+  type Selection,
+  type StopReason,
+} from './prune'

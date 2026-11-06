@@ -32,7 +32,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 - [x] **T2.1 Explorer client + cache** (M) — sequential queue, Bearer token, 429 → 60s backoff, Dexie cache by position key + params, mockable fetch. Done when: unit tests for queueing, backoff, cache hit.
 - [x] **T2.2 CORS check** (S) — try from the browser; if blocked, add Vite proxy with header injection. Done when: live call succeeds from `npm run dev`.
 - [x] **T2.3 Tree model** (M) — nodes keyed by position key, edges with SAN + counts + W/D/B; transposition merging. Done when: test proves two move orders reach one node.
-- [ ] **T2.4a Pruning algorithm** (M) — pure function over explorer responses using CLAUDE.md defaults + max depth. Done when: fixture-based tests for user-move choice, coverage cutoff, floor cutoff.
+- [x] **T2.4a Pruning algorithm** (M) — pure function over explorer responses using CLAUDE.md defaults + max depth. Done when: fixture-based tests for user-move choice, coverage cutoff, floor cutoff.
 - [ ] **T2.4b Builder run** (M) — BFS over the tree calling the client, progress callback, cancellable, persists tree. Done when: phase check passes.
 - [ ] **T2.5 Builder settings UI** (M) — color, start moves, rating band, speeds, coverage %, floor, depth; save as named repertoire.
 - [ ] **T2.6 Opening names** (S) — bundle Lichess chess-openings TSVs, label nodes by position key.
