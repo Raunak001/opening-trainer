@@ -1,3 +1,27 @@
 // Explorer client, tree model, pruning, builder settings, tree viewer.
 
-export {}
+export {
+  cacheKey,
+  canonicalParams,
+  createExplorerClient,
+  DEFAULT_MAX_RETRIES,
+  defaultSleep,
+  dexieExplorerCache,
+  EXPLORER_URL,
+  ExplorerError,
+  explorerUrl,
+  getExplorerClient,
+  RATE_LIMIT_BACKOFF_MS,
+  type ExplorerCache,
+  type ExplorerClient,
+  type ExplorerClientOptions,
+  type ExplorerMove,
+  type ExplorerOpening,
+  type ExplorerQuery,
+  type ExplorerResponse,
+  type FetchFn,
+  type RatingBucket,
+  type SleepFn,
+  type Speed,
+} from './explorer'
+export { positionKey, type PositionKey } from './positionKey'
