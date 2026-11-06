@@ -96,3 +96,20 @@ export {
   type OpeningIndex,
   type OpeningLabel,
 } from './openings'
+export { explorerQueryFor } from './builder'
+export {
+  allExpandable,
+  childViews,
+  expandedToPly,
+  formatGames,
+  formatPercent,
+  moveLabel,
+  overrideCandidates,
+  resultSplit,
+  withOverride,
+  type Candidate,
+  type EdgeView,
+  type ResultSplit,
+} from './treeView'
+export { shortestParent } from './tree'
+export { TreeViewer, type TreeViewerProps } from './TreeViewer'

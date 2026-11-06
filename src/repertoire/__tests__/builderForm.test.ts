@@ -74,6 +74,7 @@ describe('validateForm', () => {
         speeds: ['blitz', 'rapid'],
         ratings: [1600, 1800],
         settings: DEFAULT_PRUNE_SETTINGS,
+        overrides: {},
       },
     })
   })
@@ -131,6 +132,7 @@ describe('formFromRow', () => {
       speeds: ['rapid'],
       ratings: [1800, 1400, 1600],
       settings: { userMinShare: 0.07, opponentCoverage: 0.9, opponentMinShare: 0.02, maxPly: 9 },
+      overrides: { 'some-key': 'Nf3' },
       tree: createTree(),
       createdAt: 1,
       updatedAt: 2,
@@ -154,6 +156,7 @@ describe('formFromRow', () => {
       startMoves: ['e4', 'c5'],
       ratings: [1400, 1600, 1800],
       settings: row.settings,
+      overrides: { 'some-key': 'Nf3' },
     })
   })
 

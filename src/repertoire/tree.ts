@@ -195,6 +195,15 @@ export function children(
 }
 
 /**
+ * The link to a parent one ply closer to the root (first such parent if
+ * several). Following these from any node gives a shortest route to the root,
+ * so every view of the tree (paths, names, the viewer) agrees on one route.
+ */
+export function shortestParent(tree: RepertoireTree, node: TreeNode): ParentLink | undefined {
+  return node.parents.find((p) => tree.nodes[p.from]?.ply === node.ply - 1)
+}
+
+/**
  * A shortest move sequence (SAN) from the root to `key`, walking parent links.
  * Each step goes to a parent one ply closer to the root, so it always ends.
  */
@@ -202,7 +211,7 @@ export function pathTo(tree: RepertoireTree, key: PositionKey): string[] {
   const moves: string[] = []
   let node = requireNode(tree, key)
   while (node.key !== tree.rootKey) {
-    const link = node.parents.find((p) => requireNode(tree, p.from).ply === node.ply - 1)
+    const link = shortestParent(tree, node)
     if (!link) throw new TreeError(`Position "${node.key}" is not connected to the root`)
     moves.push(link.san)
     node = requireNode(tree, link.from)

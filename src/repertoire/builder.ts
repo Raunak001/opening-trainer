@@ -8,7 +8,15 @@ import {
   type Color,
   type PruneSettings,
 } from './prune'
-import { addMove, createTree, setNodeStats, sideToMove, type RepertoireTree } from './tree'
+import {
+  addMove,
+  createTree,
+  setNodeStats,
+  sideToMove,
+  TreeError,
+  type GameStats,
+  type RepertoireTree,
+} from './tree'
 
 export interface BuildOptions {
   color: Color
@@ -17,6 +25,12 @@ export interface BuildOptions {
   speeds: readonly Speed[]
   ratings: readonly RatingBucket[]
   settings?: PruneSettings
+  /**
+   * User's own choices at user-to-move positions (position key → SAN), used
+   * instead of the automatic pick. Ignored where the move is illegal or the
+   * position is never reached.
+   */
+  overrides?: Readonly<Record<PositionKey, string>>
   client: ExplorerClient
   onProgress?: (progress: BuildProgress) => void
   signal?: AbortSignal
@@ -37,6 +51,26 @@ export interface BuildResult {
   tree: RepertoireTree
   /** Explorer lookups made (cache hits included). */
   lookups: number
+  /** Override positions that were reached and applied. */
+  appliedOverrides: PositionKey[]
+}
+
+/**
+ * The explorer query the builder sends for a position. Anything else that
+ * reads a repertoire's explorer data must use this too, to hit the same cache.
+ */
+export function explorerQueryFor(
+  filter: { speeds: readonly Speed[]; ratings: readonly RatingBucket[] },
+  fen: string,
+): ExplorerQuery {
+  return {
+    fen,
+    speeds: filter.speeds,
+    ratings: filter.ratings,
+    // Only move stats are used; skipping game lists keeps responses small.
+    topGames: 0,
+    recentGames: 0,
+  }
 }
 
 function abortError(): DOMException {
@@ -54,19 +88,14 @@ function abortError(): DOMException {
 export async function buildRepertoire(options: BuildOptions): Promise<BuildResult> {
   const { color, client, onProgress, signal } = options
   const settings = options.settings ?? DEFAULT_PRUNE_SETTINGS
-  const baseQuery: Omit<ExplorerQuery, 'fen'> = {
-    speeds: options.speeds,
-    ratings: options.ratings,
-    // Only move stats are used; skipping game lists keeps responses small.
-    topGames: 0,
-    recentGames: 0,
-  }
+  const overrides = options.overrides ?? {}
+  const appliedOverrides: PositionKey[] = []
 
   let tree = createTree()
   let lookups = 0
   const lookup = async (key: PositionKey) => {
     if (signal?.aborted) throw abortError()
-    const response = await client.get({ ...baseQuery, fen: tree.nodes[key].fen }, signal)
+    const response = await client.get(explorerQueryFor(options, tree.nodes[key].fen), signal)
     lookups++
     tree = setNodeStats(tree, key, response)
     return response
@@ -96,8 +125,21 @@ export async function buildRepertoire(options: BuildOptions): Promise<BuildResul
       sideToMove: side,
       settings,
     })
-    for (const { move } of selection.moves) {
-      const r = addMove(tree, current, move.san, move)
+    let picks = selection.moves.map(({ move }) => ({ san: move.san, stats: move as GameStats }))
+    const override = overrides[current]
+    if (override && side === color && selection.reason !== 'depth') {
+      const stats = response.moves.find((m) => m.san === override)
+      try {
+        // Validate before replacing the automatic pick; illegal overrides are ignored.
+        addMove(tree, current, override)
+        picks = [{ san: override, stats: stats ?? { white: 0, draws: 0, black: 0 } }]
+        appliedOverrides.push(current)
+      } catch (err) {
+        if (!(err instanceof TreeError)) throw err
+      }
+    }
+    for (const pick of picks) {
+      const r = addMove(tree, current, pick.san, pick.stats)
       tree = r.tree
       const child = r.node
       // Leaves past the depth limit stay in the tree but are never looked up.
@@ -117,7 +159,7 @@ export async function buildRepertoire(options: BuildOptions): Promise<BuildResul
     })
   }
 
-  return { tree, lookups }
+  return { tree, lookups, appliedOverrides }
 }
 
 export interface SaveRepertoireInput extends Omit<RepertoireRow, 'id' | 'createdAt' | 'updatedAt'> {
@@ -164,6 +206,7 @@ export async function buildAndSave(
     speeds: [...options.speeds],
     ratings: [...options.ratings],
     settings,
+    overrides: { ...options.overrides },
     tree,
   })
   return (await loadRepertoire(db, id)) as RepertoireRow

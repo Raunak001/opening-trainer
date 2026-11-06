@@ -22,6 +22,11 @@ export interface RepertoireRow {
   speeds: Speed[]
   ratings: RatingBucket[]
   settings: PruneSettings
+  /**
+   * User's own move choices (position key → SAN) that replace the automatic
+   * pick. Optional: rows saved before T2.7 have none. Not indexed, so no schema bump.
+   */
+  overrides?: Record<string, string>
   tree: RepertoireTree
   createdAt: number
   updatedAt: number

@@ -56,6 +56,8 @@ export interface BuilderForm {
   maxPly: string
   /** Not on the form; kept so editing a saved repertoire preserves it. */
   userMinShare: number
+  /** Not on the form; move swaps made in the tree viewer, kept across rebuilds. */
+  overrides: Record<string, string>
 }
 
 export const DEFAULT_FORM: BuilderForm = {
@@ -69,6 +71,7 @@ export const DEFAULT_FORM: BuilderForm = {
   floor: String(DEFAULT_PRUNE_SETTINGS.opponentMinShare * 100),
   maxPly: String(DEFAULT_PRUNE_SETTINGS.maxPly),
   userMinShare: DEFAULT_PRUNE_SETTINGS.userMinShare,
+  overrides: {},
 }
 
 export type ParsedMoves = { ok: true; sans: string[] } | { ok: false; error: string }
@@ -108,6 +111,7 @@ export interface ValidBuild {
   speeds: Speed[]
   ratings: RatingBucket[]
   settings: PruneSettings
+  overrides: Record<string, string>
 }
 
 export type FormResult =
@@ -165,6 +169,7 @@ export function validateForm(form: BuilderForm): FormResult {
         opponentMinShare: floor as number,
         maxPly,
       },
+      overrides: { ...form.overrides },
     },
   }
 }
@@ -184,6 +189,7 @@ export function formFromRow(row: RepertoireRow): BuilderForm {
     floor: String(round(row.settings.opponentMinShare * 100)),
     maxPly: String(row.settings.maxPly),
     userMinShare: row.settings.userMinShare,
+    overrides: { ...row.overrides },
   }
 }
 

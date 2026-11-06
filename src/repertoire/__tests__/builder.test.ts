@@ -1,5 +1,4 @@
 import 'fake-indexeddb/auto'
-import { Chess } from 'chess.js'
 import Dexie from 'dexie'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TrainerDB } from '../../db'
@@ -11,63 +10,11 @@ import {
   saveRepertoire,
   type BuildProgress,
 } from '../builder'
-import {
-  createExplorerClient,
-  dexieExplorerCache,
-  type ExplorerClient,
-  type ExplorerQuery,
-  type ExplorerResponse,
-  type FetchFn,
-} from '../explorer'
+import { createExplorerClient, dexieExplorerCache, type FetchFn } from '../explorer'
 import { positionKey } from '../positionKey'
 import { DEFAULT_PRUNE_SETTINGS } from '../prune'
 import { findBySan, pathTo } from '../tree'
-
-type Row = [san: string, white: number, draws: number, black: number]
-
-/** Fake explorer data: SAN path from the start (space-separated) → listed moves. */
-function world(spec: Record<string, Row[]>): Map<string, ExplorerResponse> {
-  const map = new Map<string, ExplorerResponse>()
-  for (const [path, rows] of Object.entries(spec)) {
-    const chess = new Chess()
-    for (const san of path.split(' ').filter(Boolean)) chess.move(san)
-    const moves = rows.map(([san, white, draws, black]) => ({
-      uci: new Chess(chess.fen()).move(san).lan,
-      san,
-      white,
-      draws,
-      black,
-      averageRating: 1700,
-      opening: null,
-    }))
-    const sum = (k: 'white' | 'draws' | 'black') => moves.reduce((s, m) => s + m[k], 0)
-    map.set(positionKey(chess.fen()), {
-      white: sum('white'),
-      draws: sum('draws'),
-      black: sum('black'),
-      moves,
-      opening: null,
-    })
-  }
-  return map
-}
-
-const EMPTY: ExplorerResponse = { white: 0, draws: 0, black: 0, moves: [], opening: null }
-
-/** In-memory client over a fake world, counting lookups per position. */
-function fakeClient(data: Map<string, ExplorerResponse>) {
-  const calls: string[] = []
-  const queries: ExplorerQuery[] = []
-  const client: ExplorerClient = {
-    get: async (query) => {
-      const key = positionKey(query.fen)
-      calls.push(key)
-      queries.push(query)
-      return data.get(key) ?? EMPTY
-    },
-  }
-  return { client, calls, queries }
-}
+import { EMPTY, fakeClient, keyAfter, world } from './fakeWorld'
 
 // White repertoire after 1.e4. Opponent shares are chosen so 85% coverage keeps two replies.
 const E4_WORLD = world({
@@ -93,6 +40,13 @@ const E4_WORLD = world({
   // Deeper data exists but must never be requested at maxPly 6.
   'e4 e5 Nf3 Nc6 Bc4 Bc5 c3': [['Nf6', 50, 0, 50]],
   'e4 c5 Nf3 d6 d4 cxd4 Nxd4': [['Nf6', 50, 0, 50]],
+  // Only reached when the user overrides 2.Nf3 with 2.Bc4.
+  'e4 e5 Bc4': [
+    ['Nf6', 30, 0, 30],
+    ['Bc5', 20, 0, 20],
+  ],
+  'e4 e5 Bc4 Nf6': [['d3', 50, 0, 50]],
+  'e4 e5 Bc4 Bc5': [['Qg4', 50, 0, 50]],
 })
 
 const BASE = {
@@ -239,6 +193,89 @@ describe('buildRepertoire', () => {
 
     await expect(build).rejects.toMatchObject({ name: 'AbortError' })
     expect(calls).toHaveLength(3)
+  })
+})
+
+describe('overrides', () => {
+  const AFTER_E5 = keyAfter('e4 e5')
+
+  it('plays the overridden move and builds its subtree instead', async () => {
+    const { client } = fakeClient(E4_WORLD)
+    const { tree, appliedOverrides } = await buildRepertoire({
+      ...BASE,
+      overrides: { [AFTER_E5]: 'Bc4' },
+      client,
+    })
+
+    expect(appliedOverrides).toEqual([AFTER_E5])
+    expect(tree.nodes[AFTER_E5].edges.map((e) => [e.san, e.white])).toEqual([['Bc4', 50]])
+    expect(findBySan(tree, ['e4', 'e5', 'Nf3'])).toBeUndefined()
+    expect(findBySan(tree, ['e4', 'e5', 'Bc4', 'Nf6', 'd3'])).toBeDefined()
+    expect(findBySan(tree, ['e4', 'e5', 'Bc4', 'Bc5', 'Qg4'])).toBeDefined()
+    // The other branch is untouched.
+    expect(findBySan(tree, ['e4', 'c5', 'Nf3', 'd6', 'd4'])).toBeDefined()
+  })
+
+  it('accepts a legal move the explorer does not list, with zero counts', async () => {
+    const { client } = fakeClient(E4_WORLD)
+    const { tree } = await buildRepertoire({
+      ...BASE,
+      overrides: { [AFTER_E5]: 'Qh5' },
+      client,
+    })
+    expect(tree.nodes[AFTER_E5].edges).toMatchObject([{ san: 'Qh5', white: 0, draws: 0, black: 0 }])
+  })
+
+  it('ignores illegal, opponent-side and unreached overrides', async () => {
+    const { client } = fakeClient(E4_WORLD)
+    const plain = await buildRepertoire({ ...BASE, client })
+    const r = await buildRepertoire({
+      ...BASE,
+      overrides: {
+        [AFTER_E5]: 'Ke3', // illegal
+        [keyAfter('e4')]: 'd5', // opponent to move: overrides only apply to user moves
+        [keyAfter('d4')]: 'c4', // never reached
+      },
+      client,
+    })
+    expect(r.appliedOverrides).toEqual([])
+    expect(r.tree).toEqual(plain.tree)
+  })
+
+  it('rebuilding with a swap only fetches the new subtree from the network', async () => {
+    const db = new TrainerDB('builder-override-test')
+    try {
+      const fetched: string[] = []
+      const fetch = vi.fn<FetchFn>(async (url) => {
+        const fen = new URL(url).searchParams.get('fen') as string
+        fetched.push(positionKey(fen))
+        return new Response(JSON.stringify(E4_WORLD.get(positionKey(fen)) ?? EMPTY))
+      })
+      const client = createExplorerClient({ token: 't', cache: dexieExplorerCache(db), fetch })
+
+      const first = await buildAndSave(db, { ...BASE, client, name: 'swap' })
+      expect(first.overrides).toEqual({})
+      fetched.length = 0
+
+      const swapped = await buildAndSave(db, {
+        ...BASE,
+        client,
+        name: 'swap',
+        id: first.id,
+        overrides: { [AFTER_E5]: 'Bc4' },
+      })
+
+      expect(swapped.overrides).toEqual({ [AFTER_E5]: 'Bc4' })
+      // Only positions in the new 2.Bc4 subtree; everything else came from the cache.
+      expect(fetched.sort()).toEqual(
+        ['e4 e5 Bc4', 'e4 e5 Bc4 Nf6', 'e4 e5 Bc4 Bc5', 'e4 e5 Bc4 Nf6 d3', 'e4 e5 Bc4 Bc5 Qg4']
+          .map(keyAfter)
+          .sort(),
+      )
+      expect(await listRepertoires(db)).toHaveLength(1)
+    } finally {
+      await db.delete()
+    }
   })
 })
 

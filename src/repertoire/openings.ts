@@ -1,6 +1,6 @@
 import { Chess } from 'chess.js'
 import { positionKey, type PositionKey } from './positionKey'
-import type { RepertoireTree, TreeNode } from './tree'
+import { shortestParent, type RepertoireTree, type TreeNode } from './tree'
 
 /** One row of the Lichess chess-openings TSVs. */
 export interface Opening {
@@ -92,13 +92,9 @@ export function loadOpeningIndex(): Promise<OpeningIndex> {
   return indexPromise
 }
 
-/** The parent one ply closer to the root (the same route `pathTo` takes). */
-function shortestParent(tree: RepertoireTree, node: TreeNode): TreeNode | undefined {
-  for (const link of node.parents) {
-    const parent = tree.nodes[link.from]
-    if (parent && parent.ply === node.ply - 1) return parent
-  }
-  return undefined
+function parentNode(tree: RepertoireTree, node: TreeNode): TreeNode | undefined {
+  const link = shortestParent(tree, node)
+  return link && tree.nodes[link.from]
 }
 
 /**
@@ -116,7 +112,7 @@ export function openingFor(
     const opening = index.get(node.key)
     if (opening) return { opening, exact }
     exact = false
-    node = shortestParent(tree, node)
+    node = parentNode(tree, node)
   }
   return undefined
 }
@@ -134,7 +130,7 @@ export function labelTree(
       labels[node.key] = { opening: own, exact: true }
       continue
     }
-    const parent = shortestParent(tree, node)
+    const parent = parentNode(tree, node)
     const inherited = parent && labels[parent.key]
     if (inherited) labels[node.key] = { opening: inherited.opening, exact: false }
   }

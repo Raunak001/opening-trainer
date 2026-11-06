@@ -36,7 +36,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 - [x] **T2.4b Builder run** (M) — BFS over the tree calling the client, progress callback, cancellable, persists tree. Done when: phase check passes.
 - [x] **T2.5 Builder settings UI** (M) — color, start moves, rating band, speeds, coverage %, floor, depth; save as named repertoire.
 - [x] **T2.6 Opening names** (S) — bundle Lichess chess-openings TSVs, label nodes by position key.
-- [ ] **T2.7 Tree viewer + overrides** (M) — collapsible tree with stats; swap chosen move at a node and rebuild that subtree.
+- [x] **T2.7 Tree viewer + overrides** (M) — collapsible tree with stats; swap chosen move at a node and rebuild that subtree.
 
 ## Phase 3 — Spaced repetition
 
