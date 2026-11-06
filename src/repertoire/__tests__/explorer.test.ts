@@ -17,7 +17,7 @@ import {
 import {
   AFTER_E4,
   AFTER_E4_RESPONSE,
-  ITALIAN_VIA_BC4,
+  ITALIAN_VIA_E4,
   ITALIAN_VIA_NF3,
   START,
   START_RESPONSE,
@@ -76,7 +76,7 @@ describe('query params', () => {
 
   it('keys by position, so transpositions share a cache entry', () => {
     const q = { speeds: ['blitz'] } as const
-    expect(cacheKey({ fen: ITALIAN_VIA_NF3, ...q })).toBe(cacheKey({ fen: ITALIAN_VIA_BC4, ...q }))
+    expect(cacheKey({ fen: ITALIAN_VIA_NF3, ...q })).toBe(cacheKey({ fen: ITALIAN_VIA_E4, ...q }))
   })
 
   it('separates different params', () => {
@@ -124,7 +124,7 @@ describe('createExplorerClient', () => {
     const client = createExplorerClient({ token: TOKEN, cache: memoryCache(), fetch })
 
     await client.get({ fen: ITALIAN_VIA_NF3 })
-    await client.get({ fen: ITALIAN_VIA_BC4 })
+    await client.get({ fen: ITALIAN_VIA_E4 })
     expect(fetch).toHaveBeenCalledOnce()
   })
 
@@ -167,7 +167,7 @@ describe('createExplorerClient', () => {
     const client = createExplorerClient({ token: TOKEN, cache: memoryCache(), fetch: fn })
 
     const a = client.get({ fen: ITALIAN_VIA_NF3 })
-    const b = client.get({ fen: ITALIAN_VIA_BC4 })
+    const b = client.get({ fen: ITALIAN_VIA_E4 })
     await flush()
     pending[0].resolve(json(AFTER_E4_RESPONSE))
 

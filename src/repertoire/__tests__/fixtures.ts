@@ -3,10 +3,11 @@ import type { ExplorerResponse } from '../explorer'
 export const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 export const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
 
-// Italian via two move orders: 1.e4 e5 2.Nf3 Nc6 3.Bc4 and 1.e4 e5 2.Bc4 Nc6 3.Nf3.
-// Same position, different halfmove/fullmove clocks.
-export const ITALIAN_VIA_NF3 = 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3'
-export const ITALIAN_VIA_BC4 = 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 5 4'
+// Italian Game via two real move orders (generated with chess.js):
+//   1.e4 e5 2.Nf3 Nc6 3.Bc4  and  1.Nf3 Nc6 2.e4 e5 3.Bc4
+// Same position; the halfmove clock differs because the pawn moved last in the second order.
+export const ITALIAN_VIA_E4 = 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3'
+export const ITALIAN_VIA_NF3 = 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 1 3'
 
 /** Trimmed real-shaped explorer response for the start position. */
 export const START_RESPONSE: ExplorerResponse = {

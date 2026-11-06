@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { positionKey } from '../positionKey'
-import { AFTER_E4, ITALIAN_VIA_BC4, ITALIAN_VIA_NF3, START } from './fixtures'
+import { AFTER_E4, ITALIAN_VIA_E4, ITALIAN_VIA_NF3, START } from './fixtures'
 
 describe('positionKey', () => {
   it('keeps placement, side, castling and en passant', () => {
@@ -9,7 +9,7 @@ describe('positionKey', () => {
   })
 
   it('merges transpositions that differ only in move clocks', () => {
-    expect(positionKey(ITALIAN_VIA_NF3)).toBe(positionKey(ITALIAN_VIA_BC4))
+    expect(positionKey(ITALIAN_VIA_NF3)).toBe(positionKey(ITALIAN_VIA_E4))
   })
 
   it('rejects malformed FEN', () => {

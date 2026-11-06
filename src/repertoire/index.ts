@@ -25,3 +25,23 @@ export {
   type Speed,
 } from './explorer'
 export { positionKey, type PositionKey } from './positionKey'
+export {
+  addMove,
+  children,
+  createTree,
+  findBySan,
+  getNode,
+  pathTo,
+  setNodeStats,
+  sideToMove,
+  START_FEN,
+  totalGames,
+  TreeError,
+  type AddMoveResult,
+  type GameStats,
+  type MoveSpec,
+  type ParentLink,
+  type RepertoireTree,
+  type TreeEdge,
+  type TreeNode,
+} from './tree'
