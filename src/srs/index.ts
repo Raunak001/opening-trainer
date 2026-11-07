@@ -10,3 +10,10 @@ export {
   type CardSyncSummary,
   type ReviewResult,
 } from './scheduler'
+export {
+  autoGrade,
+  outcomeDetails,
+  type AutoGrade,
+  type GradeReason,
+  type ReviewOutcome,
+} from './grading'
