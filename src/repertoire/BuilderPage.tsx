@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { getDb, type TrainerDB } from '../db'
+import { syncCards } from '../srs'
 import { buildAndSave, listRepertoires, type BuildProgress } from './builder'
 import {
   bucketUpperLabel,
@@ -27,7 +28,7 @@ export interface BuilderPageProps {
 type Status =
   | { kind: 'idle' }
   | { kind: 'building'; progress?: BuildProgress }
-  | { kind: 'done'; name: string; positions: number }
+  | { kind: 'done'; name: string; positions: number; cards: number }
   | { kind: 'cancelled' }
   | { kind: 'error'; message: string }
 
@@ -76,7 +77,13 @@ export function BuilderPage({ db: dbProp, client: clientProp }: BuilderPageProps
         onProgress: (progress) => setStatus({ kind: 'building', progress }),
       })
       setForm(formFromRow(row))
-      setStatus({ kind: 'done', name: row.name, positions: Object.keys(row.tree.nodes).length })
+      const cards = await syncCards(db, row.id)
+      setStatus({
+        kind: 'done',
+        name: row.name,
+        positions: Object.keys(row.tree.nodes).length,
+        cards: cards.added + cards.reset + cards.resumed + cards.unchanged,
+      })
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') setStatus({ kind: 'cancelled' })
       else setStatus({ kind: 'error', message: err instanceof Error ? err.message : String(err) })
@@ -338,7 +345,7 @@ function StatusLine({ status }: { status: Status }) {
         : 'Building…'
       break
     case 'done':
-      text = `Saved “${status.name}” · ${status.positions} positions`
+      text = `Saved “${status.name}” · ${status.positions} positions · ${status.cards} ${status.cards === 1 ? 'card' : 'cards'}`
       break
     case 'cancelled':
       text = 'Build cancelled. Nothing was saved.'

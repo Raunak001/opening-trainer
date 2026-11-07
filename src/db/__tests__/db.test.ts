@@ -182,6 +182,7 @@ describe('cards and review logs', () => {
       id: nodeId('rep', pos),
       repertoireId: 'rep',
       positionKey: pos,
+      answer: 'e4',
     })
     await db.cards.bulkPut([
       card('a', new Date('2026-11-05T00:00:00Z')),

@@ -11,6 +11,7 @@ export {
   type ExplorerCacheRow,
   type NodeRow,
   type RepertoireRow,
+  type ReviewDetails,
   type ReviewLogRow,
   type SettingsRow,
 } from './db'

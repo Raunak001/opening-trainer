@@ -113,7 +113,7 @@ describe('BuilderPage', () => {
     typeInto('Depth (plies)', '4')
     fireEvent.click(screen.getByRole('button', { name: 'Build & save' }))
 
-    expect(await screen.findByText('Saved “My 1.e4” · 3 positions')).toBeInTheDocument()
+    expect(await screen.findByText('Saved “My 1.e4” · 3 positions · 1 card')).toBeInTheDocument()
     expect(client.get.mock.calls[0][0]).toMatchObject({
       speeds: ['rapid', 'classical'],
       ratings: [1400, 1600, 1800, 2000],

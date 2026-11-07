@@ -57,10 +57,26 @@ export interface CardRow extends Card {
   id: string
   repertoireId: string
   positionKey: string
+  /** SAN the card was learned with. If the tree's move changes, the card starts over. */
+  answer: string
+  /**
+   * The position left the tree (rebuild or move swap). Kept, not deleted, so its
+   * history returns if the position does. Due queues skip suspended cards.
+   */
+  suspended?: boolean
+}
+
+/** What happened in the review, beyond the rating (filled by the drill, T3.3+). */
+export interface ReviewDetails {
+  /** Time from prompt to the correct move. */
+  durationMs?: number
+  hintUsed?: boolean
+  /** Wrong moves before the right one. */
+  mistakes?: number
 }
 
 /** One review of one card, as returned by ts-fsrs. */
-export interface ReviewLogRow extends ReviewLog {
+export interface ReviewLogRow extends ReviewLog, ReviewDetails {
   id?: number
   cardId: string
   repertoireId: string

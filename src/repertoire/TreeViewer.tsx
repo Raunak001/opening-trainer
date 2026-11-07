@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getDb, type TrainerDB } from '../db'
+import { syncCards } from '../srs'
 import {
   buildAndSave,
   explorerQueryFor,
@@ -175,6 +176,7 @@ function RepertoireTree({
         signal: controller.signal,
         onProgress: (progress) => setStatus({ kind: 'building', progress }),
       })
+      await syncCards(db, saved.id)
       // Open the changed line so the new continuation is visible.
       const next = focus && saved.tree.nodes[focus]?.edges[0]?.to
       if (focus && next) setExpanded((prev) => new Set(prev).add(focus).add(next))
