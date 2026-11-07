@@ -12,6 +12,11 @@ export interface Line {
   moves: string[]
   /** Defaults to the standard start position. */
   startFen?: string
+  /**
+   * Leading moves played automatically, whoever's move they are: the context
+   * that leads to the position being tested (line-context playback). Default 0.
+   */
+  autoPlay?: number
 }
 
 /** One move of the line, resolved once with chess.js. */
@@ -24,6 +29,8 @@ export interface Step {
   fenAfter: string
   /** True when it is the user's move. */
   byUser: boolean
+  /** Played automatically as context (see `Line.autoPlay`), not asked. */
+  auto: boolean
 }
 
 export interface MoveInput {
@@ -38,7 +45,8 @@ export interface MoveInput {
  */
 export type HintLevel = 'none' | 'piece' | 'arrow'
 
-export type DrillStatus = 'awaitingUser' | 'awaitingOpponent' | 'complete'
+/** `replaying`: an automatic context move is next (see `Line.autoPlay`). */
+export type DrillStatus = 'replaying' | 'awaitingUser' | 'awaitingOpponent' | 'complete'
 
 /** Outcome of one user move, for grading later. */
 export interface MoveRecord {
@@ -72,6 +80,9 @@ const DEFAULT_FEN = new Chess().fen()
 
 /** Resolves a line's SAN moves into steps. Throws if any move is illegal. */
 export function resolveLine(line: Line): Step[] {
+  const autoPlay = line.autoPlay ?? 0
+  if (!Number.isInteger(autoPlay) || autoPlay < 0 || autoPlay > line.moves.length)
+    throw new Error(`Line ${line.id}: autoPlay ${autoPlay} is outside 0..${line.moves.length}`)
   const chess = new Chess(line.startFen ?? DEFAULT_FEN)
   return line.moves.map((san, i) => {
     const fenBefore = chess.fen()
@@ -90,12 +101,14 @@ export function resolveLine(line: Line): Step[] {
       fenBefore,
       fenAfter: chess.fen(),
       byUser,
+      auto: i < autoPlay,
     }
   })
 }
 
 function statusAt(steps: readonly Step[], ply: number): DrillStatus {
   if (ply >= steps.length) return 'complete'
+  if (steps[ply].auto) return 'replaying'
   return steps[ply].byUser ? 'awaitingUser' : 'awaitingOpponent'
 }
 
@@ -165,9 +178,19 @@ export function submitMove(
   }
 }
 
-/** Plays the opponent's reply from the line. No-op unless it is the opponent's turn. */
+/**
+ * Plays the next move that is not the user's to find: the opponent's reply or
+ * an automatic context move. No-op while the user is to move or when complete.
+ */
 export function playOpponentMove(state: DrillState): DrillState {
-  return state.status === 'awaitingOpponent' ? advance(state) : state
+  return state.status === 'awaitingOpponent' || state.status === 'replaying'
+    ? advance(state)
+    : state
+}
+
+/** Moves the user is asked to find (context moves excluded). */
+export function promptedMoveCount(state: Pick<DrillState, 'steps'>): number {
+  return state.steps.filter((s) => s.byUser && !s.auto).length
 }
 
 /** Raises the hint one level for the current user move. */

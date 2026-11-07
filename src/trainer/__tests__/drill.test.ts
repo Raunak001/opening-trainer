@@ -3,6 +3,7 @@ import {
   createDrill,
   expectedMove,
   playOpponentMove,
+  promptedMoveCount,
   requestHint,
   submitMove,
   type DrillState,
@@ -203,5 +204,50 @@ describe('requestHint', () => {
   it('does nothing when it is not the user move', () => {
     const s = createDrill(italian('black'))
     expect(requestHint(s)).toBe(s)
+  })
+})
+
+describe('line-context playback (autoPlay)', () => {
+  // Card after 1.e4 e5 2.Nf3 Nc6 for White: context 4 moves, answer 3.Bc4.
+  const card: Line = {
+    id: 'card',
+    name: 'Italian Game',
+    side: 'white',
+    moves: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4'],
+    autoPlay: 4,
+  }
+
+  it('replays every context move, the user side included, then prompts', () => {
+    let s = createDrill(card)
+    expect(s.steps.map((x) => x.auto)).toEqual([true, true, true, true, false])
+    for (let i = 0; i < 4; i++) {
+      expect(s.status).toBe('replaying')
+      expect(submitMove(s, { from: 'e2', to: 'e4' }).result).toBe('ignored')
+      expect(requestHint(s)).toBe(s)
+      s = playOpponentMove(s)
+    }
+    expect(s.status).toBe('awaitingUser')
+    expect(s.records).toEqual([]) // context moves are not answers
+    expect(expectedMove(s)?.san).toBe('Bc4')
+  })
+
+  it('counts only the prompted moves', () => {
+    expect(promptedMoveCount(createDrill(card))).toBe(1)
+    expect(promptedMoveCount(createDrill(italian('white')))).toBe(5)
+  })
+
+  it('records the answer and completes', () => {
+    let s = createDrill(card)
+    for (let i = 0; i < 4; i++) s = playOpponentMove(s)
+    s = submitMove(s, { from: 'd2', to: 'd4' }).state // wrong
+    s = submitMove(s, { from: 'f1', to: 'c4' }).state
+    expect(s.status).toBe('complete')
+    expect(s.records).toEqual([{ ply: 4, misses: 1, hintUsed: false }])
+  })
+
+  it('zero context prompts straight away; out-of-range autoPlay is rejected', () => {
+    expect(createDrill({ ...card, moves: ['e4'], autoPlay: 0 }).status).toBe('awaitingUser')
+    expect(() => createDrill({ ...card, autoPlay: 6 })).toThrow(/autoPlay 6/)
+    expect(() => createDrill({ ...card, autoPlay: -1 })).toThrow(/autoPlay -1/)
   })
 })

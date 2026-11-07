@@ -150,3 +150,8 @@ export function answerCurrent(session: Session, updated: CardRow, rating: Grade)
     requeued: session.requeued + (rating === Rating.Again ? 1 : 0),
   }
 }
+
+/** Cards answered so far (retries count again). */
+export function answeredCount(session: Session): number {
+  return Object.values(session.answered).reduce((a, b) => a + b, 0)
+}

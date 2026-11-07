@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { BuilderPage, TreeViewer } from './repertoire'
-import { DrillPage } from './trainer'
+import { DrillPage, ReviewPage } from './trainer'
 
-type View = 'drill' | 'build' | 'tree'
+type View = 'review' | 'drill' | 'build' | 'tree'
 
 const VIEWS: { id: View; label: string }[] = [
   { id: 'drill', label: 'Drill' },
+  { id: 'review', label: 'Review' },
   { id: 'build', label: 'Build' },
   { id: 'tree', label: 'Tree' },
 ]
@@ -27,6 +28,7 @@ function App() {
           </button>
         ))}
       </nav>
+      {view === 'review' && <ReviewPage />}
       {view === 'drill' && <DrillPage />}
       {view === 'build' && <BuilderPage />}
       {view === 'tree' && <TreeViewer />}

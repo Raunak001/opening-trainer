@@ -7,6 +7,7 @@ import {
   createDrill,
   expectedMove,
   playOpponentMove,
+  promptedMoveCount,
   requestHint,
   submitMove,
   type DrillState,
@@ -20,6 +21,24 @@ export const OPPONENT_DELAY_MS = 500
 export const WRONG_FLASH_MS = 450
 /** chessground's default move animation; input stays locked until it finishes. */
 export const ANIMATION_MS = 200
+/** Pause between automatic context moves: fast, but each move is still visible. */
+export const REPLAY_DELAY_MS = 250
+
+/** How the user did on the line's prompted moves, for grading. */
+export interface DrillOutcome {
+  /** Wrong moves over all prompted moves. */
+  mistakes: number
+  hintUsed: boolean
+  /** Thinking time: from each prompt (board unlocked) to the correct move, summed. */
+  durationMs: number
+}
+
+export interface DrillOptions {
+  /** Called once when the line is complete. */
+  onComplete?: (outcome: DrillOutcome) => void
+  /** Coach bubble text before the first move (default: "Let's drill the …"). */
+  intro?: string
+}
 
 interface WrongMove {
   fen: string
@@ -39,11 +58,20 @@ function startMessage(line: Line) {
 }
 
 /** Drives a drill: wires the pure state machine to the board and side panel. */
-export function useDrill(line: Line) {
+export function useDrill(line: Line, options: DrillOptions = {}) {
+  const { onComplete, intro } = options
   const [drill, setDrill] = useState<DrillState>(() => createDrill(line))
   const [wrong, setWrong] = useState<WrongMove | null>(null)
   const [animating, setAnimating] = useState(false)
-  const [message, setMessage] = useState(() => startMessage(line))
+  const [message, setMessage] = useState(() => intro ?? startMessage(line))
+  // Thinking-time clock: started when the board unlocks for a prompt.
+  const promptStart = useRef<number | null>(null)
+  const thinkingMs = useRef(0)
+  const completed = useRef(false)
+  const onCompleteRef = useRef(onComplete)
+  useEffect(() => {
+    onCompleteRef.current = onComplete
+  })
 
   const timers = useRef(new Set<ReturnType<typeof setTimeout>>())
   const later = useCallback((fn: () => void, ms: number) => {
@@ -63,21 +91,42 @@ export function useDrill(line: Line) {
   }, [])
 
   // Opponent auto-reply, after a pause. Also covers the first move when the user plays Black.
+  // Context moves (line-context playback) use the same path, faster.
   useEffect(() => {
-    if (drill.status !== 'awaitingOpponent') return
+    if (drill.status !== 'awaitingOpponent' && drill.status !== 'replaying') return
+    const delay = drill.status === 'replaying' ? REPLAY_DELAY_MS : OPPONENT_DELAY_MS
     const id = setTimeout(() => {
       setDrill(playOpponentMove)
       setAnimating(true)
       later(() => setAnimating(false), ANIMATION_MS)
-    }, OPPONENT_DELAY_MS)
+    }, delay)
     return () => clearTimeout(id)
   }, [drill.status, drill.ply, later])
+
+  // Start the clock when a prompt becomes playable.
+  useEffect(() => {
+    if (drill.status === 'awaitingUser' && !animating && promptStart.current === null)
+      promptStart.current = Date.now()
+  }, [drill.status, drill.ply, animating])
+
+  // Report the outcome once, when the line is done.
+  useEffect(() => {
+    if (drill.status !== 'complete' || completed.current) return
+    completed.current = true
+    onCompleteRef.current?.({
+      mistakes: drill.records.reduce((n, r) => n + r.misses, 0),
+      hintUsed: drill.records.some((r) => r.hintUsed),
+      durationMs: thinkingMs.current,
+    })
+  }, [drill.status, drill.records])
 
   const onMove = useCallback(
     (from: Key, to: Key, promotion?: PromotionPiece) => {
       const input = { from, to, promotion }
       const { state, result } = submitMove(drill, input)
       if (result === 'correct') {
+        if (promptStart.current !== null) thinkingMs.current += Date.now() - promptStart.current
+        promptStart.current = null
         setDrill(state)
         const san = drill.steps[drill.ply].san
         setMessage(`${san} is correct!`)
@@ -110,8 +159,11 @@ export function useDrill(line: Line) {
     setDrill(createDrill(line))
     setWrong(null)
     setAnimating(false)
-    setMessage(startMessage(line))
-  }, [line])
+    setMessage(intro ?? startMessage(line))
+    promptStart.current = null
+    thinkingMs.current = 0
+    completed.current = false
+  }, [line, intro])
 
   const step = expectedMove(drill)
   const hintFrom = step && drill.hint !== 'none' ? step.from : undefined
@@ -145,8 +197,8 @@ export function useDrill(line: Line) {
     onMove,
   }
 
-  const userMoves = drill.steps.filter((s) => s.byUser).length
-  const completed = drill.records.length
+  const userMoves = promptedMoveCount(drill)
+  const answered = drill.records.length
 
   const panel: SidePanelProps = {
     // Covers lines that end on either side's move.
@@ -154,12 +206,14 @@ export function useDrill(line: Line) {
     prompt:
       drill.status === 'complete'
         ? 'Line complete.'
-        : drill.status === 'awaitingOpponent'
-          ? 'Opponent is replying…'
-          : `Your move as ${sideName(line.side)}.`,
-    challenge: Math.min(completed + 1, userMoves),
+        : drill.status === 'replaying'
+          ? 'Playing the moves that lead here…'
+          : drill.status === 'awaitingOpponent'
+            ? 'Opponent is replying…'
+            : `Your move as ${sideName(line.side)}.`,
+    challenge: Math.min(answered + 1, userMoves),
     challengeCount: userMoves,
-    completed,
+    completed: answered,
     onHint,
     hintDisabled: drill.status !== 'awaitingUser' || drill.hint === 'arrow' || locked,
   }

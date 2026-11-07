@@ -2,9 +2,15 @@ import { act, renderHook } from '@testing-library/react'
 import type { Key } from 'chessground/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ARROW_BRUSH } from '../../board'
-import { expectedMove } from '../drill'
+import { expectedMove, type Line } from '../drill'
 import { italianLine } from '../sampleLines'
-import { ANIMATION_MS, OPPONENT_DELAY_MS, useDrill, WRONG_FLASH_MS } from '../useDrill'
+import {
+  ANIMATION_MS,
+  OPPONENT_DELAY_MS,
+  REPLAY_DELAY_MS,
+  useDrill,
+  WRONG_FLASH_MS,
+} from '../useDrill'
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
@@ -181,5 +187,76 @@ describe('useDrill lifecycle', () => {
     move(hook, 'd2', 'd4')
     hook.unmount()
     expect(vi.getTimerCount()).toBe(0)
+  })
+})
+
+describe('useDrill line-context playback', () => {
+  /** Each context move schedules the next after a render, so step one at a time. */
+  const replay = (moves: number) => {
+    for (let i = 0; i < moves; i++) wait(REPLAY_DELAY_MS)
+  }
+
+  const card: Line = {
+    id: 'card',
+    name: 'Italian Game',
+    side: 'white',
+    moves: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4'],
+    autoPlay: 4,
+  }
+
+  it('fast-plays the context with the board locked, then hands over', () => {
+    const hook = renderHook(() => useDrill(card, { intro: 'Watch, then play.' }))
+    expect(hook.result.current.board.interactive).toBe(false)
+    expect(hook.result.current.panel.prompt).toBe('Playing the moves that lead here…')
+    expect(hook.result.current.panel.coachMessage).toBe('Watch, then play.')
+    expect(hook.result.current.panel.challengeCount).toBe(1)
+
+    wait(REPLAY_DELAY_MS - 1)
+    expect(hook.result.current.board.fen).toBe(START)
+    wait(1)
+    expect(hook.result.current.board.fen).toBe(AFTER_E4)
+    replay(3)
+    expect(hook.result.current.drill.ply).toBe(4)
+    expect(hook.result.current.board.interactive).toBe(false) // last move still animating
+    wait(ANIMATION_MS)
+    expect(hook.result.current.board.interactive).toBe(true)
+    expect(hook.result.current.panel.prompt).toBe('Your move as White.')
+  })
+
+  it('reports mistakes, hint use and thinking time once, from the prompt', () => {
+    const onComplete = vi.fn()
+    const hook = renderHook(() => useDrill(card, { onComplete }))
+    replay(4) // replay: not thinking time
+    wait(ANIMATION_MS)
+
+    wait(3_000)
+    move(hook, 'd2', 'd4') // wrong
+    wait(WRONG_FLASH_MS + ANIMATION_MS)
+    act(() => hook.result.current.panel.onHint?.())
+    wait(1_000)
+    move(hook, 'f1', 'c4')
+
+    expect(onComplete).toHaveBeenCalledTimes(1)
+    expect(onComplete).toHaveBeenCalledWith({
+      mistakes: 1,
+      hintUsed: true,
+      durationMs: 3_000 + WRONG_FLASH_MS + ANIMATION_MS + 1_000,
+    })
+    wait(5_000)
+    expect(onComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('sums thinking time over several prompts and reports a clean line', () => {
+    const onComplete = vi.fn()
+    const hook = renderHook(() => useDrill(italianLine('white'), { onComplete }))
+    for (let guard = 0; hook.result.current.drill.status !== 'complete'; guard++) {
+      if (guard > 50) throw new Error('drill did not complete')
+      const step = expectedMove(hook.result.current.drill)
+      if (step && hook.result.current.board.interactive) {
+        wait(1_000)
+        move(hook, step.from, step.to)
+      } else wait(OPPONENT_DELAY_MS + ANIMATION_MS)
+    }
+    expect(onComplete).toHaveBeenCalledWith({ mistakes: 0, hintUsed: false, durationMs: 8_000 })
   })
 })

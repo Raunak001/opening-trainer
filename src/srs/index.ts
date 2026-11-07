@@ -20,6 +20,7 @@ export {
 } from './grading'
 export {
   answerCurrent,
+  answeredCount,
   buildDueQueue,
   createSession,
   currentCard,

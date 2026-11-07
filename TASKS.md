@@ -46,7 +46,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 - [x] **T3.2 Cards + FSRS** (M) — generate cards from user-move nodes; `createEmptyCard`, `fsrs().next`, write review log. Done when: unit tests for each rating path.
 - [x] **T3.3 Auto-grading** (S) — map outcome + time + hint to rating, thresholds from settings. Unit-tested.
 - [x] **T3.4a Due queue** (M) — query due cards, new/review daily caps, same-session requeue for Again. Pure + tested.
-- [ ] **T3.4b Line-context playback** (M) — for each card walk parent links to root, fast-play prefix, then prompt. Reuses drill UI.
+- [x] **T3.4b Line-context playback** (M) — for each card walk parent links to root, fast-play prefix, then prompt. Reuses drill UI.
 - [ ] **T3.5 Progress view** (M) — due today, new left, streak, mastery per line from mean stability.
 - [ ] **T3.6 Backup/restore** (S) — export all tables to JSON, import with confirmation. **Do this before using the app daily.**
 
