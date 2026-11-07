@@ -10,6 +10,7 @@ import {
   applyReview,
   CardNotFoundError,
   createScheduler,
+  loadDueQueue,
   reviewCard,
   syncCards,
 } from '../scheduler'
@@ -250,6 +251,47 @@ describe('with the database', () => {
     // Back to the full tree: the 2.c3 card resumes with its state.
     await build(db, {}, rep.id)
     expect(await syncCards(db, rep.id, T0)).toMatchObject({ resumed: 1, reset: 1, unchanged: 1 })
+  })
+
+  it('loadDueQueue serves new cards shallowest first within the daily cap', async () => {
+    const db = open()
+    const rep = await build(db)
+    await syncCards(db, rep.id, T0)
+
+    const q = await loadDueQueue(db, T0, rep.id)
+    expect(q.cards.map((c) => c.answer)).toEqual(['e4', expect.any(String), expect.any(String)])
+    expect(q.counts).toEqual({ learning: 0, review: 0, new: 3 })
+
+    await updateSettings(db, { daily: { newCards: 2 } })
+    expect((await loadDueQueue(db, T0, rep.id)).counts.new).toBe(2)
+
+    // Studying one new card today uses one slot; it then shows up as learning when due.
+    await reviewCard(db, q.cards[0].id, Rating.Good, T0)
+    const later = new Date(T0.getTime() + 11 * MIN)
+    const q2 = await loadDueQueue(db, later, rep.id)
+    expect(q2.counts).toEqual({ learning: 1, review: 0, new: 1 })
+    expect(q2.cards[0].id).toBe(q.cards[0].id)
+    expect(q2.heldBack.newCards).toBe(1)
+  })
+
+  it('loadDueQueue skips suspended cards and counts caps across repertoires', async () => {
+    const db = open()
+    const a = await build(db)
+    const b = await build(db)
+    await syncCards(db, a.id, T0)
+    await syncCards(db, b.id, T0)
+    await db.cards.update(`${a.id}:${keyAfter('e4 c5')}`, { suspended: true })
+    await updateSettings(db, { daily: { newCards: 3 } })
+
+    // Two new cards studied in repertoire B count against today's cap for A.
+    const qb = await loadDueQueue(db, T0, b.id)
+    await reviewCard(db, qb.cards[0].id, Rating.Good, T0)
+    await reviewCard(db, qb.cards[1].id, Rating.Good, T0)
+
+    const qa = await loadDueQueue(db, T0, a.id)
+    expect(qa.counts.new).toBe(1)
+    expect(qa.cards.every((c) => c.repertoireId === a.id && !c.suspended)).toBe(true)
+    expect((await loadDueQueue(db, T0)).cards.length).toBe(1) // all repertoires, cap reached
   })
 
   it('syncCards rejects an unknown repertoire', async () => {

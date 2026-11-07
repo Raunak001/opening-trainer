@@ -5,6 +5,7 @@ export {
   applyReview,
   CardNotFoundError,
   createScheduler,
+  loadDueQueue,
   reviewCard,
   syncCards,
   type CardSyncSummary,
@@ -17,3 +18,19 @@ export {
   type GradeReason,
   type ReviewOutcome,
 } from './grading'
+export {
+  answerCurrent,
+  buildDueQueue,
+  createSession,
+  currentCard,
+  dailyUsage,
+  isFinished,
+  queueKind,
+  REQUEUE_GAP,
+  startOfDay,
+  type DailyUsage,
+  type DueQueue,
+  type QueueKind,
+  type QueueOptions,
+  type Session,
+} from './queue'

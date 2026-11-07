@@ -10,6 +10,7 @@ import {
 } from '../db'
 import { loadRepertoire } from '../repertoire/builder'
 import { cardTargets, planCardSync, type CardSyncPlan } from './cards'
+import { buildDueQueue, dailyUsage, startOfDay, type DueQueue } from './queue'
 
 /**
  * The FSRS scheduler for the given settings. The only place ts-fsrs's
@@ -99,5 +100,38 @@ export async function syncCards(
       resumed: plan.resume.length,
       unchanged: plan.unchanged,
     }
+  })
+}
+
+/**
+ * Today's due queue from the database. Pass a repertoire id to study one
+ * repertoire, or omit it for all. Daily caps are app-wide: reviews done in
+ * any repertoire today count against them.
+ */
+export async function loadDueQueue(
+  db: TrainerDB,
+  now: Date = new Date(),
+  repertoireId?: string,
+): Promise<DueQueue> {
+  return db.transaction('r', db.cards, db.reviewLogs, db.nodes, db.settings, async () => {
+    const cards = repertoireId
+      ? await db.cards.where('repertoireId').equals(repertoireId).toArray()
+      : await db.cards.toArray()
+    const logs = await db.reviewLogs
+      .where('review')
+      .between(startOfDay(now), now, true, true)
+      .toArray()
+    const nodes = repertoireId
+      ? await db.nodes.where('repertoireId').equals(repertoireId).toArray()
+      : await db.nodes.toArray()
+    // New cards are learned shallowest first, so lines build from the first move.
+    const newRank = new Map<string, number>()
+    for (const n of nodes) newRank.set(n.key, Math.min(newRank.get(n.key) ?? Infinity, n.ply))
+    const settings = await getSettings(db)
+    return buildDueQueue(cards, now, {
+      limits: settings.daily,
+      usage: dailyUsage(logs, now),
+      newRank,
+    })
   })
 }
