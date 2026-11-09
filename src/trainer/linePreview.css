@@ -1,0 +1,62 @@
+.line-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  outline: none;
+}
+
+.line-preview:focus-visible {
+  outline: 2px solid #81b64c;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.line-preview .board {
+  width: min(360px, 100%);
+  flex: none;
+}
+
+.line-preview__side {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.line-preview__title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.line-preview__nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.line-preview__nav button {
+  width: 40px;
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: #3c3a37;
+  color: #ffffff;
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.line-preview__nav button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.line-preview__count {
+  min-width: 3.5em;
+  color: #bababa;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

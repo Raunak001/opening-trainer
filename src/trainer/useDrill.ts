@@ -222,6 +222,10 @@ export function useDrill(line: Line, options: DrillOptions = {}) {
     onMove,
   }
 
+  const playedSans = useMemo(
+    () => drill.steps.slice(0, drill.ply).map((s) => s.san),
+    [drill.steps, drill.ply],
+  )
   const userMoves = promptedMoveCount(drill)
   const answered = drill.records.length
 
@@ -241,6 +245,7 @@ export function useDrill(line: Line, options: DrillOptions = {}) {
     completed: answered,
     onHint,
     hintDisabled: drill.status !== 'awaitingUser' || drill.hint === 'arrow' || locked,
+    moves: { moves: playedSans, startFen: line.startFen },
   }
 
   return { drill, board, panel, restart }

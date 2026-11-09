@@ -159,8 +159,12 @@ export function useLesson(lesson: Lesson, options: LessonOptions = {}) {
   }
 
   /** Challenge numbers and navigation come from the caller. */
-  const panel: Pick<SidePanelProps, 'coachMessage' | 'prompt' | 'onHint' | 'hintDisabled'> = {
+  const panel: Pick<
+    SidePanelProps,
+    'coachMessage' | 'prompt' | 'onHint' | 'hintDisabled' | 'moves'
+  > = {
     coachMessage: message,
+    moves: { moves: attempt.solvedBy ? [attempt.solvedBy.san] : [], startFen: lesson.fen },
     prompt: solved ? 'Solved.' : `${lesson.prompt} You play ${sideName(side)}.`,
     onHint,
     hintDisabled: locked || hintsExhausted(attempt),

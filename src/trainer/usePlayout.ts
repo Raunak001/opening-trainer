@@ -133,6 +133,7 @@ export function usePlayout(options: PlayoutOptions) {
     challengeCount: userMoves,
     completed: played,
     hintDisabled: true,
+    moves: { moves: [...lineMoves, ...state.moves.map((m) => m.san)], startFen: lineStartFen },
   }
 
   return { state, board, panel }

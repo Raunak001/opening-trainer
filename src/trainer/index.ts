@@ -56,3 +56,6 @@ export {
 } from './playout'
 export { usePlayout, playoutFeedback, type PlayoutOptions } from './usePlayout'
 export { PlayoutView, type PlayoutViewProps } from './PlayoutView'
+export { MoveList, type MoveListProps } from './MoveList'
+export { fensAlong, moveRows, type MoveRow } from './moveRows'
+export { LinePreview, type LinePreviewProps } from './LinePreview'

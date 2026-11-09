@@ -57,6 +57,7 @@ describe('useDrill as White', () => {
     expect(panel.challenge).toBe(1)
     expect(panel.challengeCount).toBe(8)
     expect(panel.prompt).toBe('Your move as White.')
+    expect(panel.moves?.moves).toEqual([])
   })
 
   it('correct move: locks, replies after a delay, unlocks after the animation', () => {
@@ -74,6 +75,7 @@ describe('useDrill as White', () => {
     expect(hook.result.current.board.fen).toBe(AFTER_E4_E5)
     expect(hook.result.current.board.lastMove).toEqual(['e7', 'e5'])
     expect(hook.result.current.board.interactive).toBe(false)
+    expect(hook.result.current.panel.moves?.moves).toEqual(['e4', 'e5'])
 
     wait(ANIMATION_MS)
     expect(hook.result.current.board.interactive).toBe(true)

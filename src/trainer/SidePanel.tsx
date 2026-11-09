@@ -1,3 +1,4 @@
+import { MoveList, type MoveListProps } from './MoveList'
 import './sidePanel.css'
 
 export interface SidePanelProps {
@@ -16,6 +17,8 @@ export interface SidePanelProps {
   onForward?: () => void
   canGoBack?: boolean
   canGoForward?: boolean
+  /** The line so far, shown under the prompt. */
+  moves?: MoveListProps
 }
 
 export function SidePanel({
@@ -30,6 +33,7 @@ export function SidePanel({
   onForward,
   canGoBack = false,
   canGoForward = false,
+  moves,
 }: SidePanelProps) {
   const percent = challengeCount > 0 ? Math.min(100, (completed / challengeCount) * 100) : 0
 
@@ -57,6 +61,8 @@ export function SidePanel({
       </div>
 
       <p className="side-panel__prompt">{prompt}</p>
+
+      {moves && <MoveList {...moves} />}
 
       <footer className="side-panel__footer">
         <button type="button" className="side-panel__hint" onClick={onHint} disabled={hintDisabled}>

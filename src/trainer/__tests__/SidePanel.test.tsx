@@ -18,6 +18,11 @@ describe('SidePanel', () => {
     expect(screen.getByText('Challenge 3/10')).toBeInTheDocument()
   })
 
+  it('shows the line so far when given moves', () => {
+    render(<SidePanel {...base} moves={{ moves: ['e4', 'c6'] }} />)
+    expect(screen.getByRole('list', { name: 'Moves' })).toHaveTextContent('1.e4c6')
+  })
+
   it('reports progress from completed challenges', () => {
     render(<SidePanel {...base} />)
     const bar = screen.getByRole('progressbar', { name: 'Progress' })
