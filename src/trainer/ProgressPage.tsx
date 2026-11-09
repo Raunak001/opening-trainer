@@ -2,13 +2,14 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState, type ReactNode } from 'react'
 import { getDb, type TrainerDB } from '../db'
 import { formatLine } from '../repertoire/builderForm'
+import { TIERS } from '../repertoire/courses'
 import { loadOpeningIndex, type OpeningIndex } from '../repertoire/openings'
 import { loadProgress, type LineProgress, type RepertoireProgress } from '../srs'
 import './progress.css'
 
 export interface ProgressPageProps {
   db?: TrainerDB
-  /** Shown as a "Start review" button when there is something to study. */
+  /** Shown as a "Practice all" button when there is something to study. */
   onStartReview?: () => void
 }
 
@@ -34,11 +35,15 @@ export function ProgressPage({ db: dbProp, onStartReview }: ProgressPageProps) {
 
   if (!progress) return <p className="progress__empty">Loading progress…</p>
   if (progress.repertoires.length === 0)
-    return <p className="progress__empty">No repertoires yet. Build one, then come back here.</p>
+    return (
+      <p className="progress__empty">
+        No courses yet. Start one from the Library, then come back here.
+      </p>
+    )
 
   const { today, streak } = progress
   const overCap = today.review - today.reviewWithinCap
-  const toStudy = today.learning + today.reviewWithinCap + today.newToday
+  const toStudy = today.learning + today.reviewWithinCap + progress.practiceNewToday
 
   return (
     <main className="progress">
@@ -66,7 +71,7 @@ export function ProgressPage({ db: dbProp, onStartReview }: ProgressPageProps) {
       {onStartReview && (
         <div className="progress__actions">
           <button type="button" disabled={toStudy === 0} onClick={onStartReview}>
-            {toStudy > 0 ? `Start review (${toStudy})` : 'Nothing to review now'}
+            {toStudy > 0 ? `Practice all (${toStudy})` : 'Nothing to practise now'}
           </button>
         </div>
       )}
@@ -102,7 +107,10 @@ function RepertoireSection({
       <header className="progress__rep-header">
         <h2>
           {rep.name}{' '}
-          <span className="progress__muted">({rep.color === 'white' ? 'White' : 'Black'})</span>
+          <span className="progress__muted">
+            ({rep.color === 'white' ? 'White' : 'Black'}
+            {rep.tier && ` · ${TIERS[rep.tier].label}`})
+          </span>
         </h2>
         <MasteryBar value={rep.mastery} label={`${rep.name} mastery`} />
         <span className="progress__muted">

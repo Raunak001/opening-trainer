@@ -48,3 +48,12 @@ body {
   outline: 2px solid #81b64c;
   outline-offset: 2px;
 }
+
+.app-nav--sub {
+  padding-top: 4px;
+}
+
+.app-nav--sub button {
+  padding: 6px 12px;
+  font-size: 14px;
+}

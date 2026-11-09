@@ -3,7 +3,7 @@ import type { Key } from 'chessground/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ARROW_BRUSH } from '../../board'
 import { expectedMove, type Line } from '../drill'
-import { italianLine } from '../sampleLines'
+import { italianLine } from './sampleLines'
 import {
   ANIMATION_MS,
   OPPONENT_DELAY_MS,

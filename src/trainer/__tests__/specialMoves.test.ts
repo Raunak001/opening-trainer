@@ -3,7 +3,7 @@ import type { Key } from 'chessground/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { normalizeCastle, type PromotionPiece } from '../../board'
 import { expectedMove, type Line, type Step } from '../drill'
-import { SPECIAL_MOVE_LINES } from '../sampleLines'
+import { SPECIAL_MOVE_LINES } from './sampleLines'
 import { ANIMATION_MS, OPPONENT_DELAY_MS, useDrill, WRONG_FLASH_MS } from '../useDrill'
 
 // Final positions, checked by hand: captured pawns gone after e.p., kings and rooks on

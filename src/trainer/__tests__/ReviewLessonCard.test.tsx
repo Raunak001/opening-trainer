@@ -5,7 +5,7 @@ import Dexie from 'dexie'
 import { Rating } from 'ts-fsrs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BoardProps } from '../../board'
-import { TrainerDB } from '../../db'
+import { TrainerDB, updateSettings } from '../../db'
 import { CENTER, PACK } from '../../lessons/__tests__/fixtures'
 import { lessonCardId, newLessonCard } from '../../srs'
 import { ReviewPage } from '../ReviewPage'
@@ -36,6 +36,8 @@ const WAIT = { timeout: 4000 }
 describe('ReviewPage with lesson cards', () => {
   it('plays a due lesson card on its own position; any accepted move counts', async () => {
     const db = openDb()
+    // The clock runs from mount: a loaded test machine must still count as instant.
+    await updateSettings(db, { grading: { easyUnderMs: 60_000 } })
     await db.cards.put(newLessonCard(PACK, CENTER, new Date(Date.now() - 1000)))
     render(<ReviewPage db={db} packs={PACKS} nextCardDelayMs={10} />)
 

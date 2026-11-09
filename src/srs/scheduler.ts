@@ -5,6 +5,7 @@ import {
   type AppSettings,
   type CardRow,
   type ReviewDetails,
+  type RepertoireRow,
   type ReviewLogRow,
   type TrainerDB,
 } from '../db'
@@ -159,6 +160,8 @@ export interface RepertoireProgress {
   id: string
   name: string
   color: 'white' | 'black'
+  /** Library course depth, when the repertoire is a course. */
+  tier?: RepertoireRow['tier']
   cards: number
   studied: number
   /** Mean card mastery, 0–1. */
@@ -169,6 +172,11 @@ export interface RepertoireProgress {
 
 export interface Progress {
   today: TodayCounts
+  /**
+   * New cards Practice would serve today. Library courses' new cards are learned
+   * in Learn mode instead, so they are not counted here.
+   */
+  practiceNewToday: number
   streak: Streak
   /** Mean card mastery over all repertoires, 0–1. */
   mastery: number
@@ -200,6 +208,7 @@ export async function loadProgress(db: TrainerDB, now: Date = new Date()): Promi
           id: row.id,
           name: row.name,
           color: row.color,
+          ...(row.tier && { tier: row.tier }),
           cards: own.length,
           studied: own.filter((c) => c.state !== State.New).length,
           mastery: overallMastery(own, days),
@@ -207,8 +216,16 @@ export async function loadProgress(db: TrainerDB, now: Date = new Date()): Promi
         })
       }
 
+      const usage = dailyUsage(todayLogs, now)
+      const courses = new Set(
+        (await db.repertoires.toArray()).filter((r) => r.courseId !== undefined).map((r) => r.id),
+      )
+      const practiceCards = cards.filter(
+        (c) => !(courses.has(c.repertoireId) && c.state === State.New),
+      )
       return {
-        today: todayCounts(cards, now, settings.daily, dailyUsage(todayLogs, now)),
+        today: todayCounts(cards, now, settings.daily, usage),
+        practiceNewToday: todayCounts(practiceCards, now, settings.daily, usage).newToday,
         streak: studyStreak(reviewTimes, now),
         mastery: overallMastery(cards, days),
         masteredAfterDays: days,

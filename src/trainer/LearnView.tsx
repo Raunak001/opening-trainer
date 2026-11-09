@@ -1,3 +1,4 @@
+import { Chess } from 'chess.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Board } from '../board'
 import { getSettings, type TrainerDB } from '../db'
@@ -8,7 +9,9 @@ import type { OpeningIndex } from '../repertoire/openings'
 import { positionKey, type PositionKey } from '../repertoire/positionKey'
 import type { RepertoireTree } from '../repertoire/tree'
 import { fensAlong } from './moveRows'
-import { learnReviews, newCardCount, saveLearnedLine, type LearnState } from './learn'
+import { createMoveExplainer } from './explainer'
+import { learnFen, learnReviews, newCardCount, saveLearnedLine, type LearnState } from './learn'
+import { PlayoutView } from './PlayoutView'
 import { SidePanel } from './SidePanel'
 import { TrainerLayout } from './TrainerLayout'
 import { useLearn } from './useLearn'
@@ -76,6 +79,8 @@ function LearnSession({
   evals,
 }: LearnViewProps & { evals: ReadonlyMap<PositionKey, Score> }) {
   const [saved, setSaved] = useState<Saved>()
+  const [playingOut, setPlayingOut] = useState(false)
+  const explain = useMemo(() => createMoveExplainer(db), [db])
   const learnLine = useMemo(() => ({ side, moves: line.moves }), [side, line.moves])
   const onComplete = (state: LearnState) => {
     setSaved({ kind: 'saving' })
@@ -94,13 +99,26 @@ function LearnSession({
     onComplete,
   })
   const fresh = newCardCount(learn)
+  const finalFen = learnFen(learn)
+  const gameOver = new Chess(finalFen).isGameOver()
 
   return (
     <>
-      <TrainerLayout>
-        <Board {...board} />
-        <SidePanel {...panel} />
-      </TrainerLayout>
+      {playingOut ? (
+        <PlayoutView
+          db={db}
+          fen={finalFen}
+          userSide={side}
+          lineStartFen={new Chess().fen()}
+          lineMoves={line.moves}
+          explain={explain}
+        />
+      ) : (
+        <TrainerLayout>
+          <Board {...board} />
+          <SidePanel {...panel} />
+        </TrainerLayout>
+      )}
       <div className="drill-controls">
         <button type="button" onClick={onExit}>
           Back to course
@@ -114,6 +132,11 @@ function LearnSession({
               {learn.ply >= learn.steps.length ? 'Play it now' : 'Skip to playing'}
             </button>
           </>
+        )}
+        {learn.phase === 'complete' && !gameOver && !playingOut && (
+          <button type="button" onClick={() => setPlayingOut(true)}>
+            Play on vs Stockfish
+          </button>
         )}
         {saved?.kind === 'saved' && onNext && (
           <button type="button" onClick={onNext}>

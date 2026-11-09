@@ -21,8 +21,6 @@ export {
   type Side,
   type Step,
 } from './drill'
-export { DrillPage } from './DrillPage'
-export { italianLine, SAMPLE_LINES, SPECIAL_MOVE_LINES } from './sampleLines'
 export {
   ANIMATION_MS,
   OPPONENT_DELAY_MS,

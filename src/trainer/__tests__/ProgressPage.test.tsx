@@ -51,7 +51,11 @@ describe('ProgressPage', () => {
   it('asks for a repertoire when there is none', async () => {
     render(<ProgressPage db={openDb()} />)
     expect(
-      await screen.findByText('No repertoires yet. Build one, then come back here.', {}, WAIT),
+      await screen.findByText(
+        'No courses yet. Start one from the Library, then come back here.',
+        {},
+        WAIT,
+      ),
     ).toBeInTheDocument()
   })
 
@@ -93,7 +97,7 @@ describe('ProgressPage', () => {
     const bars = section.getAllByRole('meter')
     expect(bars[0]).toHaveAccessibleName('My 1.e4 mastery')
 
-    fireEvent.click(screen.getByRole('button', { name: /Start review/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Practice all/ }))
     expect(onStartReview).toHaveBeenCalledOnce()
   })
 

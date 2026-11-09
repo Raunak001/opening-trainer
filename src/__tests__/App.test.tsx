@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import App from '../App'
 
@@ -16,7 +16,14 @@ describe('App', () => {
 
   it('switches between the views', async () => {
     render(<App />)
+    const main = screen.getByRole('navigation', { name: 'Main' })
+    expect(
+      within(main)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Library', 'Practice all', 'Lessons', 'Progress', 'Import', 'Backup', 'Advanced'])
 
+    fireEvent.click(screen.getByRole('button', { name: 'Advanced' }))
     fireEvent.click(screen.getByRole('button', { name: 'Build' }))
     expect(screen.getByRole('heading', { name: 'New repertoire' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Build' })).toHaveAttribute('aria-current', 'page')
@@ -29,11 +36,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Progress' }))
     expect(screen.getByRole('button', { name: 'Progress' })).toHaveAttribute('aria-current', 'page')
     expect(
-      await screen.findByText(
-        /Loading progress|No repertoires yet|Due today/,
-        {},
-        { timeout: 4000 },
-      ),
+      await screen.findByText(/Loading progress|No courses yet|Due today/, {}, { timeout: 4000 }),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Lessons' }))
@@ -46,7 +49,11 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Backup' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Export backup' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Drill' }))
-    expect(screen.getByText('Challenge 1/8')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Practice all' }))
+    expect(
+      await screen.findByText(/Loading your cards|Nothing is due right now/),
+    ).toBeInTheDocument()
+    // The hardcoded sample lines are gone from the app.
+    expect(screen.queryByRole('button', { name: 'Drill' })).not.toBeInTheDocument()
   })
 })

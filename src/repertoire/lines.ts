@@ -110,9 +110,11 @@ export function lineName(
 }
 
 /**
- * new: no card on the line studied yet. learned: every card studied and none
- * lapsed (taught in Learn mode or reviewed; FSRS schedules it from there).
- * learning: anything in between: some cards still new, or one lapsed.
+ * new: the line still has moves you have not been taught (cards never
+ * studied). Lines share their first moves, so a line is new until all of its
+ * own moves are taught. learned: every card studied and none lapsed (taught in
+ * Learn mode or reviewed; FSRS schedules it from there). learning: every move
+ * taught, but a card lapsed and is being relearned.
  */
 export type LineStatus = 'new' | 'learning' | 'learned'
 
@@ -127,10 +129,9 @@ export function lineCards(
 }
 
 export function lineStatus(lineCardsInOrder: readonly CardRow[]): LineStatus {
-  if (lineCardsInOrder.every((c) => c.state === State.New)) return 'new'
-  if (lineCardsInOrder.every((c) => c.state !== State.New && c.state !== State.Relearning))
-    return 'learned'
-  return 'learning'
+  if (lineCardsInOrder.length === 0 || lineCardsInOrder.some((c) => c.state === State.New))
+    return 'new'
+  return lineCardsInOrder.some((c) => c.state === State.Relearning) ? 'learning' : 'learned'
 }
 
 /** Cards by position key, for one repertoire's cards. */

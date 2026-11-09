@@ -33,7 +33,7 @@ type Build =
 
 type Mode = { kind: 'overview' } | { kind: 'learn'; lineId: PositionKey } | { kind: 'practice' }
 
-const STATUS_LABEL = { new: 'New', learning: 'Learning', learned: 'Learned' } as const
+const STATUS_LABEL = { new: 'New', learning: 'Relearning', learned: 'Learned' } as const
 
 function useOpenings(): OpeningIndex | undefined {
   const [openings, setOpenings] = useState<OpeningIndex>()
@@ -297,7 +297,7 @@ function CourseOverview({
         </span>
         {counts.learning > 0 && (
           <span>
-            <strong>{counts.learning}</strong> in progress
+            <strong>{counts.learning}</strong> to relearn
           </span>
         )}
         <span>

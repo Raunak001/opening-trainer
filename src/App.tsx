@@ -4,27 +4,31 @@ import { BackupPage } from './db/BackupPage'
 import { ImportPage } from './importer'
 import { LessonsPage } from './lessons'
 import { BuilderPage, TreeViewer } from './repertoire'
-import { CoursePage, DrillPage, LibraryPage, ProgressPage, ReviewPage } from './trainer'
+import { CoursePage, LibraryPage, ProgressPage, ReviewPage } from './trainer'
 
-type View =
-  'library' | 'review' | 'progress' | 'drill' | 'lessons' | 'build' | 'tree' | 'import' | 'backup'
+type View = 'library' | 'practice' | 'lessons' | 'progress' | 'import' | 'backup' | 'advanced'
+type AdvancedView = 'build' | 'tree'
 
 const VIEWS: { id: View; label: string }[] = [
   { id: 'library', label: 'Library' },
-  { id: 'drill', label: 'Drill' },
-  { id: 'review', label: 'Review' },
-  { id: 'progress', label: 'Progress' },
+  { id: 'practice', label: 'Practice all' },
   { id: 'lessons', label: 'Lessons' },
-  { id: 'build', label: 'Build' },
-  { id: 'tree', label: 'Tree' },
+  { id: 'progress', label: 'Progress' },
   { id: 'import', label: 'Import' },
   { id: 'backup', label: 'Backup' },
+  { id: 'advanced', label: 'Advanced' },
+]
+
+const ADVANCED: { id: AdvancedView; label: string }[] = [
+  { id: 'build', label: 'Build' },
+  { id: 'tree', label: 'Tree' },
 ]
 
 function App() {
   const [view, setView] = useState<View>('library')
   // The open course, when the library shows one.
   const [course, setCourse] = useState<string>()
+  const [advanced, setAdvanced] = useState<AdvancedView>('build')
 
   return (
     <>
@@ -43,20 +47,33 @@ function App() {
           </button>
         ))}
       </nav>
+      {view === 'advanced' && (
+        <nav className="app-nav app-nav--sub" aria-label="Advanced">
+          {ADVANCED.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              aria-current={advanced === v.id ? 'page' : undefined}
+              onClick={() => setAdvanced(v.id)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </nav>
+      )}
       {view === 'library' &&
         (course ? (
           <CoursePage key={course} entryId={course} onBack={() => setCourse(undefined)} />
         ) : (
           <LibraryPage onOpen={setCourse} />
         ))}
-      {view === 'review' && <ReviewPage />}
-      {view === 'progress' && <ProgressPage onStartReview={() => setView('review')} />}
-      {view === 'drill' && <DrillPage />}
+      {view === 'practice' && <ReviewPage />}
+      {view === 'progress' && <ProgressPage onStartReview={() => setView('practice')} />}
       {view === 'lessons' && <LessonsPage />}
-      {view === 'build' && <BuilderPage />}
-      {view === 'tree' && <TreeViewer />}
       {view === 'import' && <ImportPage />}
       {view === 'backup' && <BackupPage />}
+      {view === 'advanced' && advanced === 'build' && <BuilderPage />}
+      {view === 'advanced' && advanced === 'tree' && <TreeViewer />}
     </>
   )
 }

@@ -131,11 +131,13 @@ describe('lineStatus', () => {
     expect(lineCards(advance, cards).map((c) => c.positionKey)).toEqual([keys[0], keys[2]])
   })
 
-  it('new → learning → learned, and a lapse makes it learning again', () => {
+  it('new until every move is taught, then learned; a lapse makes it learning', () => {
     const status = (...states: State[]) =>
       lineStatus(lineCards(advance, cardsByPosition(keys.map((k, i) => card(k, states[i])))))
     expect(status(State.New, State.New, State.New)).toBe('new')
-    expect(status(State.Review, State.New, State.New)).toBe('learning')
+    // Shared first moves taught in another line do not make this one started.
+    expect(status(State.Review, State.New, State.New)).toBe('new')
+    expect(status(State.Review, State.Review, State.New)).toBe('new')
     expect(status(State.Learning, State.Learning, State.Review)).toBe('learned')
     expect(status(State.Review, State.Review, State.Review)).toBe('learned')
     expect(status(State.Review, State.Relearning, State.Review)).toBe('learning')
