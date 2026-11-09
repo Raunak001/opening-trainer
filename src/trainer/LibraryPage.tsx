@@ -91,7 +91,7 @@ export function LibraryPage({ db: dbProp, onOpen }: LibraryPageProps) {
 function LibraryCard({ item, onOpen }: { item: LibraryItem; onOpen: (id: string) => void }) {
   const { entry, course, counts } = item
   const fen = useMemo(() => fensAlong(entry.startMoves).at(-1) as string, [entry.startMoves])
-  const progress = counts && counts.lines > 0 ? counts.learned / counts.lines : 0
+  const percent = counts && counts.lines > 0 ? Math.round((counts.learned / counts.lines) * 100) : 0
   return (
     <li className="library-card">
       <button
@@ -110,27 +110,29 @@ function LibraryCard({ item, onOpen }: { item: LibraryItem; onOpen: (id: string)
             <span className="library-card__moves">{formatLine(entry.startMoves)}</span>
           </span>
           <span className="library-card__blurb">{entry.blurb}</span>
-          {course && counts ? (
-            <span className="library-card__progress">
+          <span className="library-card__progress">
+            <span className="library-card__progress-row">
               <span
                 className="library-card__bar"
                 role="meter"
                 aria-label={`${entry.name} lines learned`}
                 aria-valuemin={0}
-                aria-valuemax={counts.lines}
-                aria-valuenow={counts.learned}
+                aria-valuemax={counts?.lines ?? 0}
+                aria-valuenow={counts?.learned ?? 0}
               >
-                <span style={{ width: `${Math.round(progress * 100)}%` }} />
+                <span style={{ width: `${percent}%` }} />
               </span>
-              <span>
-                {counts.learned}/{counts.lines} lines learned
-                {course.tier && ` · ${TIERS[course.tier].label}`}
-                {counts.due > 0 && ` · ${counts.due} due`}
-              </span>
+              <span className="library-card__percent">{percent}%</span>
             </span>
-          ) : (
-            <span className="library-card__muted">Not started</span>
-          )}
+            <span>
+              {course && counts
+                ? `${counts.learned}/${counts.lines} lines learned${course.tier ? ` · ${TIERS[course.tier].label}` : ''}`
+                : 'Not started'}
+              {counts && counts.due > 0 && (
+                <span className="library-card__due"> · {counts.due} due</span>
+              )}
+            </span>
+          </span>
         </span>
       </button>
     </li>

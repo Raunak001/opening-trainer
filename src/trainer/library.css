@@ -151,17 +151,39 @@
 .library-card__progress {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   margin-top: auto;
+  padding-top: 6px;
   color: var(--panel-muted);
   font-size: 13px;
 }
 
+.library-card__progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.library-card__percent {
+  min-width: 3.2em;
+  color: var(--panel-text);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.library-card__due {
+  color: #f0b44c;
+  font-weight: 700;
+}
+
 .library-card__bar {
   display: block;
-  height: 8px;
+  flex: 1;
+  height: 14px;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: 7px;
   background: var(--panel-raised);
 }
 

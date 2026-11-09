@@ -43,6 +43,9 @@ describe('LibraryPage', () => {
       screen.getByRole('img', { name: 'Caro-Kann Defense start position' }),
     ).toBeInTheDocument()
     expect(screen.getAllByText('Not started')).toHaveLength(CATALOG.length)
+    // Every card has its progress bar, at 0% until the course is started.
+    expect(screen.getAllByRole('meter')).toHaveLength(CATALOG.length)
+    expect(screen.getAllByText('0%')).toHaveLength(CATALOG.length)
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Color' }), {
       target: { value: 'white' },

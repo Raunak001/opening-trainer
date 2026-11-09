@@ -31,7 +31,8 @@ function openDb() {
 }
 
 const PACKS = [PACK]
-const WAIT = { timeout: 4000 }
+// Generous: these run on real timers and IndexedDB, slow when the whole suite runs.
+const WAIT = { timeout: 10_000 }
 
 describe('ReviewPage with lesson cards', () => {
   it('plays a due lesson card on its own position; any accepted move counts', async () => {
@@ -39,7 +40,7 @@ describe('ReviewPage with lesson cards', () => {
     // The clock runs from mount: a loaded test machine must still count as instant.
     await updateSettings(db, { grading: { easyUnderMs: 60_000 } })
     await db.cards.put(newLessonCard(PACK, CENTER, new Date(Date.now() - 1000)))
-    render(<ReviewPage db={db} packs={PACKS} nextCardDelayMs={10} />)
+    render(<ReviewPage db={db} packs={PACKS} nextCardDelayMs={500} />)
 
     expect(await screen.findByText('Challenge 1/1', {}, WAIT)).toBeInTheDocument()
     expect(screen.getByText('Strike the center. Find the move.')).toBeInTheDocument()
@@ -53,7 +54,7 @@ describe('ReviewPage with lesson cards', () => {
     expect(logs).toMatchObject([
       { cardId: lessonCardId(PACK.id, CENTER.fen), rating: Rating.Easy, mistakes: 0 },
     ])
-  })
+  }, 20_000)
 
   it('skips lesson cards whose lesson is no longer bundled', async () => {
     const db = openDb()

@@ -56,7 +56,8 @@ async function setup() {
   return { db, rep }
 }
 
-const WAIT = { timeout: 4000 }
+// Generous: these run on real timers and IndexedDB, slow when the whole suite runs.
+const WAIT = { timeout: 10_000 }
 
 /** Waits until the board accepts a move in the given position, then plays it. */
 async function play(fenStart: string, from: string, to: string) {
@@ -84,7 +85,9 @@ describe('ReviewPage', () => {
 
   it('plays each card in its line context, grades it, requeues Again, and saves reviews', async () => {
     const { db, rep } = await setup()
-    render(<ReviewPage db={db} nextCardDelayMs={10} />)
+    // "Instant" must not depend on how loaded the test machine is.
+    await updateSettings(db, { grading: { easyUnderMs: 60_000 } })
+    render(<ReviewPage db={db} nextCardDelayMs={500} />)
 
     // Card 1: the start position, no context. Answered at once → Easy.
     expect(await screen.findByText('Challenge 1/3', {}, WAIT)).toBeInTheDocument()
