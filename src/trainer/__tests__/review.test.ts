@@ -4,7 +4,7 @@ import type { CardRow } from '../../db'
 import { keyAfter } from '../../repertoire/__tests__/fakeWorld'
 import { addMove, createTree, type RepertoireTree } from '../../repertoire/tree'
 import { createDrill } from '../drill'
-import { cardLine, formatInterval, gradeFeedback, ratingName } from '../review'
+import { cardLine, isPlayable, formatInterval, gradeFeedback, ratingName } from '../review'
 
 function addLine(tree: RepertoireTree, line: string) {
   let t = tree
@@ -51,6 +51,16 @@ describe('cardLine', () => {
     const root = cardLine(card('', 'e4'), { tree: TREE, color: 'white' }, 'x')
     expect(root).toMatchObject({ moves: ['e4'], autoPlay: 0 })
     expect(createDrill(root).status).toBe('awaitingUser')
+  })
+
+  it('plays a game card from its own moves; it need not be in the tree', () => {
+    const gameCard = { ...card('e4 d5', 'exd5'), origin: 'game' as const, line: ['e4', 'd5'] }
+    expect(isPlayable(gameCard, TREE)).toBe(true)
+    expect(isPlayable(card('e4 d5', 'exd5'), TREE)).toBe(false)
+    expect(cardLine(gameCard, { tree: TREE, color: 'white' }, 'x')).toMatchObject({
+      moves: ['e4', 'd5', 'exd5'],
+      autoPlay: 2,
+    })
   })
 
   it('throws for a position missing from the tree', () => {

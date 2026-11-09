@@ -32,7 +32,7 @@ export {
   type DrillOptions,
   type DrillOutcome,
 } from './useDrill'
-export { cardLine, formatInterval, gradeFeedback, ratingName } from './review'
+export { cardLine, formatInterval, gradeFeedback, isPlayable, ratingName } from './review'
 export { NEXT_CARD_DELAY_MS, ReviewPage, type ReviewPageProps } from './ReviewPage'
 export { LINES_SHOWN, ProgressPage, type ProgressPageProps } from './ProgressPage'
 export {

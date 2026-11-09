@@ -203,3 +203,13 @@
     justify-self: start;
   }
 }
+
+.import__badge {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--panel-raised);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+}

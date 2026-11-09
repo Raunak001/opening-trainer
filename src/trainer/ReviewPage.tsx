@@ -19,7 +19,7 @@ import {
 } from '../srs'
 import type { Line } from './drill'
 import { createMoveExplainer, type MoveExplainer } from './explainer'
-import { cardLine, gradeFeedback, ratingName } from './review'
+import { cardLine, gradeFeedback, isPlayable, ratingName } from './review'
 import { SidePanel } from './SidePanel'
 import { TrainerLayout } from './TrainerLayout'
 import { useDrill, type DrillOutcome } from './useDrill'
@@ -70,7 +70,7 @@ export function ReviewPage({ db: dbProp, nextCardDelayMs = NEXT_CARD_DELAY_MS }:
       // stay due; the next card sync suspends them).
       const showable = queue.cards.filter((c) => {
         const rep = repertoires.get(c.repertoireId)
-        return rep !== undefined && rep.tree.nodes[c.positionKey] !== undefined
+        return rep !== undefined && isPlayable(c, rep.tree)
       })
       if (!live) return
       setLoaded({
@@ -98,7 +98,8 @@ export function ReviewPage({ db: dbProp, nextCardDelayMs = NEXT_CARD_DELAY_MS }:
   const line = useMemo<Line | undefined>(() => {
     if (!card || !repertoire) return undefined
     const label = openings && openingFor(repertoire.tree, openings, card.positionKey)
-    return cardLine(card, repertoire, label?.opening.name ?? repertoire.name, turn)
+    const name = card.origin === 'game' ? `${repertoire.name}: from your game` : undefined
+    return cardLine(card, repertoire, name ?? label?.opening.name ?? repertoire.name, turn)
   }, [card, repertoire, openings, turn])
 
   const onComplete = useCallback(

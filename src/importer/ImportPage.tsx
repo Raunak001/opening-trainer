@@ -10,28 +10,61 @@ import {
 } from '../db'
 import { listRepertoires, loadRepertoire, type Repertoire } from '../repertoire/builder'
 import { getChesscomClient, type ChesscomClient } from './chesscom'
+import {
+  applyAutoCards,
+  engineReplyGrader,
+  type ApplyOptions,
+  type AutoCardSummary,
+} from './autoCards'
 import { describeDeviation, matchGame, type GameMatch } from './deviation'
 import { filterGames, TIME_CLASSES } from './games'
-import { syncGames, type SyncProgress } from './sync'
+import { syncGames, type SyncProgress, type SyncResult } from './sync'
 import './import.css'
 
 export interface ImportPageProps {
   db?: TrainerDB
   client?: ChesscomClient
+  /** Grades the user's reply after an opponent leaves book; Stockfish by default. */
+  gradeReply?: ApplyOptions['gradeReply']
 }
 
 type Status =
   | { kind: 'idle' }
-  | { kind: 'syncing'; progress?: SyncProgress }
+  | { kind: 'busy'; message: string }
   | { kind: 'done'; message: string }
   | { kind: 'error'; message: string }
+
+async function loadAllRepertoires(db: TrainerDB): Promise<Repertoire[]> {
+  const reps: Repertoire[] = []
+  for (const row of await listRepertoires(db)) {
+    const rep = await loadRepertoire(db, row.id)
+    if (rep) reps.push(rep)
+  }
+  return reps
+}
+
+function syncMessage(r: SyncResult): string {
+  return `Fetched ${r.fetched} of ${r.months} months: ${r.added} new games, ${r.games} stored.`
+}
+
+function cardsMessage(s: AutoCardSummary): string {
+  const failed = s.failed + s.refailed
+  if (failed + s.created === 0) return 'No cards from games.'
+  const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
+  return `From your games: ${cards(failed)} failed and ${cards(s.created)} new, due now.`
+}
+
+const progressMessage = (p: SyncProgress) => `Fetching ${p.month} (${p.index} of ${p.total})…`
+
+const isAbort = (err: unknown) => err instanceof DOMException && err.name === 'AbortError'
+const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err))
 
 type ColorFilter = 'both' | GameRow['color']
 
 const RESULT_LABEL: Record<GameRow['result'], string> = { win: 'Won', loss: 'Lost', draw: 'Draw' }
 
 /** Import chess.com games and show where each one left the repertoire. */
-export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) {
+export function ImportPage({ db: dbProp, client: clientProp, gradeReply }: ImportPageProps) {
   const db = dbProp ?? getDb()
   const [username, setUsername] = useState<string>()
   const [timeClasses, setTimeClasses] = useState<TimeClass[]>([])
@@ -67,14 +100,7 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
   }
 
   // Live, so a rebuilt tree re-checks every game.
-  const repertoires = useLiveQuery(async () => {
-    const reps: Repertoire[] = []
-    for (const row of await listRepertoires(db)) {
-      const rep = await loadRepertoire(db, row.id)
-      if (rep) reps.push(rep)
-    }
-    return reps
-  }, [db])
+  const repertoires = useLiveQuery(() => loadAllRepertoires(db), [db])
 
   const matches = useMemo(() => {
     const out = new Map<string, GameMatch | undefined>()
@@ -84,32 +110,57 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
   }, [games, repertoires])
   const repName = (id: string) => repertoires?.find((r) => r.id === id)?.name ?? ''
 
-  async function onSync(e: FormEvent) {
-    e.preventDefault()
-    if (!user || status.kind === 'syncing') return
+  /** Fails and creates cards from games not checked yet (T5.4). */
+  async function checkCards(signal: AbortSignal): Promise<AutoCardSummary> {
+    const all = await db.games.where('username').equals(user).toArray()
+    const reps = await loadAllRepertoires(db)
+    const found = new Map(all.map((g) => [g.id, matchGame(g.sans, g.color, reps)]))
+    return applyAutoCards(db, all, {
+      gradeReply: gradeReply ?? engineReplyGrader(db),
+      matches: found,
+      signal,
+      onProgress: (done, total) =>
+        setStatus({ kind: 'busy', message: `Checking games for cards (${done} of ${total})…` }),
+    })
+  }
+
+  /** Runs one action with a cancel button; `steps` return the lines to report. */
+  async function run(steps: (signal: AbortSignal) => Promise<string[]>) {
+    if (!user || status.kind === 'busy') return
     const controller = new AbortController()
     abort.current = controller
-    setStatus({ kind: 'syncing' })
+    setStatus({ kind: 'busy', message: 'Starting…' })
     try {
-      await updateSettings(db, { importer: { username: user } })
-      const r = await syncGames(db, clientProp ?? getChesscomClient(), user, {
-        signal: controller.signal,
-        onProgress: (progress) => setStatus({ kind: 'syncing', progress }),
-      })
-      setStatus({
-        kind: 'done',
-        message:
-          `Fetched ${r.fetched} of ${r.months} months: ${r.added} new games, ` +
-          `${r.games} stored.`,
-      })
+      const lines = await steps(controller.signal)
+      setStatus({ kind: 'done', message: lines.join(' ') })
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError')
-        setStatus({ kind: 'done', message: 'Sync cancelled. Months already fetched are kept.' })
-      else setStatus({ kind: 'error', message: err instanceof Error ? err.message : String(err) })
+      if (isAbort(err))
+        setStatus({ kind: 'done', message: 'Cancelled. Work already done is kept.' })
+      else setStatus({ kind: 'error', message: errorText(err) })
     }
   }
 
-  const syncing = status.kind === 'syncing'
+  function onSync(e: FormEvent) {
+    e.preventDefault()
+    run(async (signal) => {
+      await updateSettings(db, { importer: { username: user } })
+      setStatus({ kind: 'busy', message: 'Listing archives…' })
+      const synced = await syncGames(db, clientProp ?? getChesscomClient(), user, {
+        signal,
+        onProgress: (p) => setStatus({ kind: 'busy', message: progressMessage(p) }),
+      })
+      try {
+        return [syncMessage(synced), cardsMessage(await checkCards(signal))]
+      } catch (err) {
+        if (isAbort(err)) throw err
+        return [syncMessage(synced), `Checking games for cards failed: ${errorText(err)}`]
+      }
+    })
+  }
+
+  const onCheck = () => run(async (signal) => [cardsMessage(await checkCards(signal))])
+
+  const busy = status.kind === 'busy'
   const shown = filterGames(games ?? [], {
     timeClasses,
     color: color === 'both' ? undefined : color,
@@ -125,15 +176,18 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
             <input
               value={username ?? ''}
               onChange={(e) => setUsername(e.target.value)}
-              disabled={username === undefined || syncing}
+              disabled={username === undefined || busy}
               autoComplete="off"
               spellCheck={false}
             />
           </label>
-          <button type="submit" className="import__primary" disabled={!user || syncing}>
+          <button type="submit" className="import__primary" disabled={!user || busy}>
             Sync
           </button>
-          {syncing && (
+          <button type="button" disabled={!user || busy} onClick={onCheck}>
+            Check games for cards
+          </button>
+          {busy && (
             <button type="button" onClick={() => abort.current?.abort()}>
               Cancel
             </button>
@@ -162,13 +216,7 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
             </select>
           </label>
         </div>
-        {status.kind === 'syncing' && (
-          <p role="status">
-            {status.progress
-              ? `Fetching ${status.progress.month} (${status.progress.index} of ${status.progress.total})…`
-              : 'Listing archives…'}
-          </p>
-        )}
+        {status.kind === 'busy' && <p role="status">{status.message}</p>}
         {status.kind === 'done' && (
           <p role="status" className="import__ok">
             {status.message}
@@ -199,7 +247,12 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
                     {g.timeClass} · {RESULT_LABEL[g.result]}
                   </span>
                 </span>
-                <DeviationCell match={matches.get(g.id)} sans={g.sans} repName={repName} />
+                <DeviationCell
+                  match={matches.get(g.id)}
+                  sans={g.sans}
+                  repName={repName}
+                  cards={g.cards}
+                />
               </li>
             ))}
           </ol>
@@ -209,15 +262,24 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
   )
 }
 
+const CARD_BADGE: Record<NonNullable<GameRow['cards']>['outcome'], string | undefined> = {
+  failed: 'card failed',
+  created: 'new card',
+  none: undefined,
+}
+
 function DeviationCell({
   match,
   sans,
   repName,
+  cards,
 }: {
   match: GameMatch | undefined
   sans: readonly string[]
   repName: (id: string) => string
+  cards: GameRow['cards']
 }) {
+  const badge = cards && CARD_BADGE[cards.outcome]
   if (!match) return <span className="import__muted">No repertoire for this color</span>
   const d = match.deviation
   return (
@@ -226,6 +288,7 @@ function DeviationCell({
       {d.kind !== 'outside' && (
         <span className="import__muted"> · {repName(match.repertoireId)}</span>
       )}
+      {badge && <span className="import__badge">{badge}</span>}
     </span>
   )
 }

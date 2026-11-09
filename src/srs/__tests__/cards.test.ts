@@ -74,6 +74,31 @@ describe('planCardSync', () => {
   /** Existing cards that have been studied a bit. */
   const studied: CardRow[] = first.add.map((c) => ({ ...c, reps: 4, state: State.Review }))
 
+  it('leaves game cards alone, and adopts one once the tree covers its position', () => {
+    const gameCard: CardRow = {
+      ...studied[0],
+      id: `rep:${keyAfter('e4 d5')}`,
+      positionKey: keyAfter('e4 d5'),
+      answer: 'exd5',
+      origin: 'game',
+      line: ['e4', 'd5'],
+      gameId: 'g1',
+    }
+    const kept = planCardSync('rep', targets, [...studied, gameCard], NOW)
+    expect(kept.suspend).toEqual([])
+
+    const covering = planCardSync(
+      'rep',
+      [...targets, { positionKey: keyAfter('e4 d5'), answer: 'exd5' }],
+      [...studied, gameCard],
+      NOW,
+    )
+    expect(covering.resume).toHaveLength(1)
+    expect(covering.resume[0]).toMatchObject({ reps: 4, suspended: false })
+    expect(covering.resume[0]).not.toHaveProperty('origin')
+    expect(covering.resume[0]).not.toHaveProperty('line')
+  })
+
   it('resets a card whose expected move changed', () => {
     const swapped: CardTarget[] = targets.map((t) =>
       t.positionKey === keyAfter('e4 e5') ? { ...t, answer: 'Bc4' } : t,

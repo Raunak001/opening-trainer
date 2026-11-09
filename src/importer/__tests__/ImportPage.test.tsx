@@ -4,6 +4,7 @@ import Dexie from 'dexie'
 import { afterEach, describe, expect, it } from 'vitest'
 import { getSettings, TrainerDB } from '../../db'
 import { buildAndSave } from '../../repertoire/builder'
+import { syncCards } from '../../srs'
 import { DEFAULT_PRUNE_SETTINGS } from '../../repertoire/prune'
 import { fakeClient, world } from '../../repertoire/__tests__/fakeWorld'
 import type { ChesscomClient } from '../chesscom'
@@ -33,6 +34,8 @@ const row = (id: string) => ({
   sans: [] as string[],
 })
 
+const noGrades = async () => ({ grade: 'good' as const, best: null })
+
 const client: ChesscomClient = {
   archives: async () => ['2026/10'],
   month: async () => [
@@ -49,13 +52,15 @@ const client: ChesscomClient = {
 describe('ImportPage', () => {
   it('syncs a username, remembers it and lists the games', async () => {
     const db = openDb()
-    render(<ImportPage db={db} client={client} />)
+    render(<ImportPage db={db} client={client} gradeReply={noGrades} />)
     const input = await screen.findByLabelText('chess.com username')
     await waitFor(() => expect(input).toBeEnabled())
     fireEvent.change(input, { target: { value: 'Me' } })
     fireEvent.click(screen.getByRole('button', { name: 'Sync' }))
 
-    expect(await screen.findByText(/Fetched 1 of 1 months: 2 new games/)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/Fetched 1 of 1 months: 2 new games.*No cards from games\./),
+    ).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Games (2)' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Black vs Rival' })).toBeInTheDocument()
     expect((await getSettings(db)).importer.username).toBe('me')
@@ -71,7 +76,7 @@ describe('ImportPage', () => {
         game({ moves: 'c4', timeClass: 'rapid', color: 'black' }),
       ],
     }
-    render(<ImportPage db={db} client={mixed} />)
+    render(<ImportPage db={db} client={mixed} gradeReply={noGrades} />)
     const input = await screen.findByLabelText('chess.com username')
     await waitFor(() => expect(input).toBeEnabled())
     fireEvent.change(input, { target: { value: 'me' } })
@@ -122,6 +127,39 @@ describe('ImportPage', () => {
     expect(screen.getAllByText(/My 1\.e4/)).toHaveLength(2)
   })
 
+  it('a sync fails the card the user left book on and marks the game', async () => {
+    const db = openDb()
+    const rep = await buildAndSave(db, {
+      name: 'My 1.e4',
+      color: 'white',
+      startMoves: ['e4'],
+      speeds: ['blitz'],
+      ratings: [1600],
+      settings: { ...DEFAULT_PRUNE_SETTINGS, maxPly: 2 },
+      client: fakeClient(
+        world({
+          '': [['e4', 6, 1, 3]],
+          e4: [['e5', 5, 1, 4]],
+          'e4 e5': [['Nf3', 6, 0, 4]],
+        }),
+      ).client,
+    })
+    await syncCards(db, rep.id, new Date(Date.now() - 10 * 86_400_000))
+    const recent: ChesscomClient = {
+      archives: async () => ['2026/11'],
+      month: async () => [game({ moves: 'e4 e5 Bc4', end: Math.floor(Date.now() / 1000) - 3600 })],
+    }
+    render(<ImportPage db={db} client={recent} gradeReply={noGrades} />)
+    const input = await screen.findByLabelText('chess.com username')
+    await waitFor(() => expect(input).toBeEnabled())
+    fireEvent.change(input, { target: { value: 'me' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sync' }))
+    expect(
+      await screen.findByText(/From your games: 1 card failed and 0 cards new, due now\./),
+    ).toBeInTheDocument()
+    expect(await screen.findByText('card failed')).toBeInTheDocument()
+  })
+
   it('shows a sync error', async () => {
     const failing: ChesscomClient = {
       archives: async () => {
@@ -129,7 +167,7 @@ describe('ImportPage', () => {
       },
       month: async () => [],
     }
-    render(<ImportPage db={openDb()} client={failing} />)
+    render(<ImportPage db={openDb()} client={failing} gradeReply={noGrades} />)
     const input = await screen.findByLabelText('chess.com username')
     await waitFor(() => expect(input).toBeEnabled())
     fireEvent.change(input, { target: { value: 'ghost' } })

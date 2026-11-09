@@ -9,8 +9,9 @@ import type { Line } from './drill'
 /**
  * The drill line for one card: the moves from the root to the card's
  * position, played automatically as context, then the card's answer for the
- * user to find. `attempt` keeps line ids unique when a card is retried.
- * Throws if the card's position is not in the tree.
+ * user to find. Game cards (positions outside the tree) carry their own moves.
+ * `attempt` keeps line ids unique when a card is retried.
+ * Throws if a tree card's position is not in the tree.
  */
 export function cardLine(
   card: CardRow,
@@ -18,7 +19,7 @@ export function cardLine(
   name: string,
   attempt = 0,
 ): Line {
-  const context = pathTo(repertoire.tree, card.positionKey)
+  const context = card.line ? [...card.line] : pathTo(repertoire.tree, card.positionKey)
   return {
     id: `${card.id}#${attempt}`,
     name,
@@ -26,6 +27,11 @@ export function cardLine(
     moves: [...context, card.answer],
     autoPlay: context.length,
   }
+}
+
+/** Whether a card can be shown: its position is in the tree, or it carries its own line. */
+export function isPlayable(card: CardRow, tree: RepertoireTree): boolean {
+  return card.line !== undefined || tree.nodes[card.positionKey] !== undefined
 }
 
 const RATING_NAMES: Record<Grade, string> = {

@@ -1,6 +1,17 @@
 // Chess.com archive fetch, sync, PGN parsing, deviation detection.
 
 export {
+  applyAutoCards,
+  engineReplyGrader,
+  lostEnough,
+  planAutoCards,
+  type ApplyOptions,
+  type AutoCardStep,
+  type AutoCardSummary,
+  type PlanOptions,
+  type ReplyGrading,
+} from './autoCards'
+export {
   CHESSCOM_BACKOFF_MS,
   CHESSCOM_MAX_RETRIES,
   CHESSCOM_URL,

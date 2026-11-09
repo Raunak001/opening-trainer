@@ -30,7 +30,10 @@ export interface CardSyncPlan {
   reset: CardRow[]
   /** Positions that left the tree. */
   suspend: CardRow[]
-  /** Suspended positions that are back with the same answer: history resumes. */
+  /**
+   * Suspended positions back with the same answer (history resumes), and game
+   * cards whose position the tree now covers with the same answer (they become tree cards).
+   */
   resume: CardRow[]
   /** Untouched. */
   unchanged: number
@@ -44,6 +47,15 @@ function freshCard(repertoireId: string, target: CardTarget, now: Date): CardRow
     positionKey: target.positionKey,
     answer: target.answer,
   }
+}
+
+/** A game card turned into a tree card, keeping its history. */
+function adopt(card: CardRow): CardRow {
+  const adopted: CardRow = { ...card, suspended: false }
+  delete adopted.origin
+  delete adopted.line
+  delete adopted.gameId
+  return adopted
 }
 
 /** Decides how a repertoire's stored cards must change to match its tree. Pure. */
@@ -62,11 +74,13 @@ export function planCardSync(
     const card = byPosition.get(target.positionKey)
     if (!card) plan.add.push(freshCard(repertoireId, target, now))
     else if (card.answer !== target.answer) plan.reset.push(freshCard(repertoireId, target, now))
+    else if (card.origin === 'game') plan.resume.push(adopt(card))
     else if (card.suspended) plan.resume.push({ ...card, suspended: false })
     else plan.unchanged++
   }
   for (const card of existing) {
-    if (!wanted.has(card.positionKey) && !card.suspended)
+    // Game cards are not in the tree by design: rebuilds leave them alone.
+    if (!wanted.has(card.positionKey) && !card.suspended && card.origin !== 'game')
       plan.suspend.push({ ...card, suspended: true })
   }
   return plan
