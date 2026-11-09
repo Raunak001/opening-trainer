@@ -77,7 +77,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 
 **Phase done when:** two packs of 5 play end to end with hints; solved lessons join the review queue.
 
-- [ ] **T6.1 Lesson schema + player** (M) — JSON `{ id, concept, fen, prompt, accepted[], hints[], explanation }`; player reuses board + panel.
+- [x] **T6.1 Lesson schema + player** (M) — JSON `{ id, concept, fen, prompt, accepted[], hints[], explanation }`; player reuses board + panel.
 - [ ] **T6.2 Authoring tool** (M) — set up/paste FEN, multi-PV Stockfish, auto-accept moves within ~30cp of best, export JSON.
 - [ ] **T6.3 Position mining** (M) — find concept-matching positions in imported games + explorer.
 - [ ] **T6.4 First packs** (L, mostly you) — strike the center, develop before attacking, castle early, punish early queen. Claude drafts candidates; you approve.

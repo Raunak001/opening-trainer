@@ -1,0 +1,79 @@
+/* Lesson pages. Same dark palette as the trainer, builder and import pages. */
+.lessons {
+  --panel-bg: #262421;
+  --panel-raised: #3c3a37;
+  --panel-muted: #bababa;
+  --panel-accent: #81b64c;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+  width: min(960px, 100%);
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.lessons__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--panel-bg);
+}
+
+.lessons h1,
+.lessons h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.lessons__muted {
+  color: var(--panel-muted);
+  font-size: 13px;
+}
+
+.lessons__packs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lessons__packs button {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--panel-raised);
+  border-radius: 8px;
+  background: #1f1e1c;
+  color: #ffffff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lessons__packs button:hover {
+  border-color: var(--panel-accent);
+}
+
+.lessons__pack-name {
+  font-weight: 700;
+}
+
+.lessons__errors {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #4a2420;
+  font-size: 13px;
+}
+
+.lessons__errors p,
+.lessons__errors ul {
+  margin: 4px 0;
+}
