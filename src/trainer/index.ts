@@ -59,3 +59,32 @@ export { PlayoutView, type PlayoutViewProps } from './PlayoutView'
 export { MoveList, type MoveListProps } from './MoveList'
 export { fensAlong, moveRows, type MoveRow } from './moveRows'
 export { LinePreview, type LinePreviewProps } from './LinePreview'
+export {
+  createLearn,
+  isFast,
+  knownPrefix,
+  lastLearnMove,
+  learnArrow,
+  learnFen,
+  learnHintSquare,
+  learnReviews,
+  learnTurn,
+  newCardCount,
+  nextLineToLearn,
+  playLearnOpponent,
+  requestLearnHint,
+  saveLearnedLine,
+  showBack,
+  showDone,
+  showNext,
+  startPlay,
+  submitLearnMove,
+  type LearnLine,
+  type LearnPhase,
+  type LearnRecord,
+  type LearnReview,
+  type LearnState,
+  type LearnStep,
+  type LearnTurn,
+  type NextLine,
+} from './learn'
