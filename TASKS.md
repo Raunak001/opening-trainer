@@ -55,7 +55,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 **Phase done when:** off-book moves get a grade and a sentence like "Best was Nxe5, winning a pawn (+1.2)"; repeat positions load evals from cache.
 
 - [x] **T4.1 Engine worker** (M) — Promise API over UCI (`uci`, `isready`, `position fen`, `go depth N`), parse `info score cp|mate pv` and `bestmove`, single in-flight search with cancel. Parser unit-tested.
-- [ ] **T4.2 Eval cache + grading** (M) — Dexie cache by position key + depth; cp → win% (Lichess formula) → grade.
+- [x] **T4.2 Eval cache + grading** (M) — Dexie cache by position key + depth; cp → win% (Lichess formula) → grade.
 - [ ] **T4.3a Material/hanging checks** (M) — play PV with chess.js, material swing; attackers vs defenders for hanging pieces. Fixture tests.
 - [ ] **T4.3b Fork/missed-mate checks** (M) — port ideas from lichess-puzzler tagger. Fixture tests.
 - [ ] **T4.4 Opening-principle rules** (M) — early queen, same piece twice, no castle by move 10, no central pawn, undeveloped minors.

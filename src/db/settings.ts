@@ -23,6 +23,17 @@ export interface AppSettings {
     /** A card counts as fully mastered once its FSRS stability reaches this many days. */
     masteredAfterDays: number
   }
+  /** Engine move grading (engine/grading.ts). Losses are in win% points (0–100 scale). */
+  moveGrading: {
+    /** Stockfish search depth for grading. */
+    depth: number
+    /** Losing at least this much win% → inaccuracy. */
+    inaccuracy: number
+    /** Losing at least this much win% → mistake. */
+    mistake: number
+    /** Losing at least this much win% → blunder. */
+    blunder: number
+  }
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -30,6 +41,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   fsrs: { requestRetention: 0.9 },
   daily: { newCards: 20, reviews: 200 },
   progress: { masteredAfterDays: 21 },
+  // Lichess's judgement thresholds (0.1 / 0.2 / 0.3 winning chances) on the win% scale.
+  moveGrading: { depth: 16, inaccuracy: 5, mistake: 10, blunder: 15 },
 }
 
 export type SettingsPatch = { [K in keyof AppSettings]?: Partial<AppSettings[K]> }
@@ -43,6 +56,7 @@ export function mergeSettings(base: AppSettings, patch: SettingsPatch | undefine
     fsrs: { ...base.fsrs, ...patch?.fsrs },
     daily: { ...base.daily, ...patch?.daily },
     progress: { ...base.progress, ...patch?.progress },
+    moveGrading: { ...base.moveGrading, ...patch?.moveGrading },
   }
 }
 
