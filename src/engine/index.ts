@@ -38,3 +38,5 @@ export type {
   MaterialCheckInput,
   MaterialFinding,
 } from './material'
+export { findForks, forkAt, tacticFindings, tacticFindingsForGrading } from './tactics'
+export type { Fork, ForkTarget, TacticCheckInput, TacticFinding } from './tactics'
