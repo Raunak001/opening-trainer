@@ -115,34 +115,44 @@ export async function syncCards(
 /**
  * Today's due queue from the database. Pass a repertoire id to study one
  * repertoire, or omit it for all. Daily caps are app-wide: reviews done in
- * any repertoire today count against them.
+ * any repertoire today count against them. New cards of library courses are
+ * left out: those are learned line by line in Learn mode.
  */
 export async function loadDueQueue(
   db: TrainerDB,
   now: Date = new Date(),
   repertoireId?: string,
 ): Promise<DueQueue> {
-  return db.transaction('r', db.cards, db.reviewLogs, db.nodes, db.settings, async () => {
-    const cards = repertoireId
-      ? await db.cards.where('repertoireId').equals(repertoireId).toArray()
-      : await db.cards.toArray()
-    const logs = await db.reviewLogs
-      .where('review')
-      .between(startOfDay(now), now, true, true)
-      .toArray()
-    const nodes = repertoireId
-      ? await db.nodes.where('repertoireId').equals(repertoireId).toArray()
-      : await db.nodes.toArray()
-    // New cards are learned shallowest first, so lines build from the first move.
-    const newRank = new Map<string, number>()
-    for (const n of nodes) newRank.set(n.key, Math.min(newRank.get(n.key) ?? Infinity, n.ply))
-    const settings = await getSettings(db)
-    return buildDueQueue(cards, now, {
-      limits: settings.daily,
-      usage: dailyUsage(logs, now),
-      newRank,
-    })
-  })
+  return db.transaction(
+    'r',
+    [db.cards, db.reviewLogs, db.nodes, db.settings, db.repertoires],
+    async () => {
+      const all = repertoireId
+        ? await db.cards.where('repertoireId').equals(repertoireId).toArray()
+        : await db.cards.toArray()
+      // Library courses teach new lines in Learn mode: their new cards never enter Practice.
+      const courses = new Set(
+        (await db.repertoires.toArray()).filter((r) => r.courseId !== undefined).map((r) => r.id),
+      )
+      const cards = all.filter((c) => !(courses.has(c.repertoireId) && c.state === State.New))
+      const logs = await db.reviewLogs
+        .where('review')
+        .between(startOfDay(now), now, true, true)
+        .toArray()
+      const nodes = repertoireId
+        ? await db.nodes.where('repertoireId').equals(repertoireId).toArray()
+        : await db.nodes.toArray()
+      // New cards are learned shallowest first, so lines build from the first move.
+      const newRank = new Map<string, number>()
+      for (const n of nodes) newRank.set(n.key, Math.min(newRank.get(n.key) ?? Infinity, n.ply))
+      const settings = await getSettings(db)
+      return buildDueQueue(cards, now, {
+        limits: settings.daily,
+        usage: dailyUsage(logs, now),
+        newRank,
+      })
+    },
+  )
 }
 
 export interface RepertoireProgress {

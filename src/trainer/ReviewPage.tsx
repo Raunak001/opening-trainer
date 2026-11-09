@@ -40,6 +40,10 @@ export interface ReviewPageProps {
   nextCardDelayMs?: number
   /** Lesson packs for lesson cards; defaults to the bundled ones. */
   packs?: readonly LessonPack[]
+  /** Practice one repertoire (a course) only; omitted → every due card. */
+  repertoireId?: string
+  /** Shows a button to leave, e.g. back to the course page. */
+  onExit?: () => void
 }
 
 type Loaded = {
@@ -54,6 +58,8 @@ export function ReviewPage({
   db: dbProp,
   nextCardDelayMs = NEXT_CARD_DELAY_MS,
   packs: packsProp,
+  repertoireId,
+  onExit,
 }: ReviewPageProps) {
   const db = dbProp ?? getDb()
   const packs = packsProp ?? bundledPacks().packs
@@ -73,7 +79,10 @@ export function ReviewPage({
     let live = true
     ;(async () => {
       const now = new Date()
-      const [queue, settings] = await Promise.all([loadDueQueue(db, now), getSettings(db)])
+      const [queue, settings] = await Promise.all([
+        loadDueQueue(db, now, repertoireId),
+        getSettings(db),
+      ])
       const repertoires = new Map<string, Repertoire>()
       for (const id of new Set(
         queue.cards.filter((c) => !isLessonCard(c)).map((c) => c.repertoireId),
@@ -106,7 +115,7 @@ export function ReviewPage({
     return () => {
       live = false
     }
-  }, [db, reloads, packs])
+  }, [db, reloads, packs, repertoireId])
 
   const session = loaded?.session
   const card = session && currentCard(session)
@@ -143,6 +152,12 @@ export function ReviewPage({
     [card, loaded, db, nextCardDelayMs],
   )
 
+  const exit = onExit && (
+    <button type="button" onClick={onExit}>
+      Back to course
+    </button>
+  )
+
   if (error) return <p className="review__message review__message--error">Error: {error}</p>
   if (!loaded || !session) return <p className="review__message">Loading your cards…</p>
 
@@ -160,6 +175,7 @@ export function ReviewPage({
         <button type="button" onClick={() => setReloads((n) => n + 1)}>
           Check again
         </button>
+        {exit}
       </div>
     )
   }
@@ -177,37 +193,45 @@ export function ReviewPage({
         <button type="button" onClick={() => setReloads((n) => n + 1)}>
           Check for more
         </button>
+        {exit}
       </div>
     )
   }
 
   const answered = answeredCount(session)
   const progress = { current: answered + 1, total: answered + session.pending.length, answered }
+  const controls = exit && <div className="drill-controls">{exit}</div>
   if (card && lesson)
     return (
-      <LessonCardDrill
-        key={`${card.id}#${turn}`}
-        lesson={lesson}
-        onComplete={onComplete}
-        feedback={feedback}
-        progress={progress}
-      />
+      <>
+        <LessonCardDrill
+          key={`${card.id}#${turn}`}
+          lesson={lesson}
+          onComplete={onComplete}
+          feedback={feedback}
+          progress={progress}
+        />
+        {controls}
+      </>
     )
   if (!line || !repertoire) return null
   return (
-    <CardDrill
-      key={`${line.id}`}
-      line={line}
-      intro={
-        line.autoPlay
-          ? `${line.name}. Watch the moves, then find yours.`
-          : `${line.name}. Play your first move.`
-      }
-      onComplete={onComplete}
-      explain={explain}
-      feedback={feedback}
-      progress={progress}
-    />
+    <>
+      <CardDrill
+        key={`${line.id}`}
+        line={line}
+        intro={
+          line.autoPlay
+            ? `${line.name}. Watch the moves, then find yours.`
+            : `${line.name}. Play your first move.`
+        }
+        onComplete={onComplete}
+        explain={explain}
+        feedback={feedback}
+        progress={progress}
+      />
+      {controls}
+    </>
   )
 }
 

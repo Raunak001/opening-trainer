@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { State } from 'ts-fsrs'
 import { getDb, type TrainerDB } from '../db'
 import type { BuildProgress } from '../repertoire/builder'
@@ -13,6 +13,7 @@ import type { PositionKey } from '../repertoire/positionKey'
 import { loadCourse, type CourseDetail, type LineWithStatus } from './courseData'
 import { LearnView } from './LearnView'
 import { LinePreview } from './LinePreview'
+import { ReviewPage } from './ReviewPage'
 import './library.css'
 
 export interface CoursePageProps {
@@ -21,8 +22,6 @@ export interface CoursePageProps {
   onBack: () => void
   db?: TrainerDB
   client?: ExplorerClient
-  /** Practice view for the course's due cards (T7.7). */
-  renderPractice?: (repertoireId: string, onExit: () => void) => ReactNode
 }
 
 type Build =
@@ -53,13 +52,7 @@ function displayName(line: CourseLine, openings: OpeningIndex | undefined, fallb
 }
 
 /** One catalog entry's course: start it at a tier, see its lines, learn and practise them. */
-export function CoursePage({
-  entryId,
-  onBack,
-  db: dbProp,
-  client: clientProp,
-  renderPractice,
-}: CoursePageProps) {
+export function CoursePage({ entryId, onBack, db: dbProp, client: clientProp }: CoursePageProps) {
   const db = dbProp ?? getDb()
   const entry = catalogEntry(entryId)
   // null: not started. undefined: still loading.
@@ -131,8 +124,14 @@ export function CoursePage({
     }
   }
 
-  if (detail && mode.kind === 'practice' && renderPractice)
-    return <>{renderPractice(detail.repertoire.id, () => setMode({ kind: 'overview' }))}</>
+  if (detail && mode.kind === 'practice')
+    return (
+      <ReviewPage
+        db={db}
+        repertoireId={detail.repertoire.id}
+        onExit={() => setMode({ kind: 'overview' })}
+      />
+    )
 
   return (
     <main className="course" aria-label={entry.name}>
@@ -168,7 +167,7 @@ export function CoursePage({
             onRebuild={start}
             onCancel={cancel}
             onLearn={(lineId) => setMode({ kind: 'learn', lineId })}
-            onPractice={renderPractice ? () => setMode({ kind: 'practice' }) : undefined}
+            onPractice={() => setMode({ kind: 'practice' })}
           />
         )}
       </section>
@@ -281,7 +280,7 @@ function CourseOverview({
   onRebuild: (tier: CourseTier) => void
   onCancel: () => void
   onLearn: (lineId: PositionKey) => void
-  onPractice?: () => void
+  onPractice: () => void
 }) {
   const [changing, setChanging] = useState(false)
   const { counts, next, repertoire } = detail
@@ -318,11 +317,9 @@ function CourseOverview({
               ? 'Learn (daily new-card limit reached)'
               : 'Learn (all lines learned)'}
         </button>
-        {onPractice && (
-          <button type="button" disabled={counts.due === 0 || building} onClick={onPractice}>
-            {counts.due > 0 ? `Practice (${counts.due} due)` : 'Practice (nothing due)'}
-          </button>
-        )}
+        <button type="button" disabled={counts.due === 0 || building} onClick={onPractice}>
+          {counts.due > 0 ? `Practice (${counts.due} due)` : 'Practice (nothing due)'}
+        </button>
         {!changing && !building && (
           <button type="button" onClick={() => setChanging(true)}>
             Change depth
