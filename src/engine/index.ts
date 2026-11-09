@@ -21,3 +21,20 @@ export {
 export type { EvalCache, EvaluateOptions, PositionEval } from './evalCache'
 export { CP_CEILING, gradeForLoss, gradeMove, playMove, winPercent, WIN_PERCENT_K } from './grading'
 export type { GradeMoveOptions, GradeThresholds, MoveGrade, MoveGrading } from './grading'
+export {
+  hangingPieces,
+  lineMaterial,
+  materialBalance,
+  materialFindings,
+  materialFindingsForGrading,
+  MIN_MATERIAL_SWING,
+  PIECE_VALUES,
+  staticExchange,
+} from './material'
+export type {
+  HangingPiece,
+  LineCapture,
+  LineMaterial,
+  MaterialCheckInput,
+  MaterialFinding,
+} from './material'
