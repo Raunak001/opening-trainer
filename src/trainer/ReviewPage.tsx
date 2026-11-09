@@ -18,6 +18,7 @@ import {
   type Session,
 } from '../srs'
 import type { Line } from './drill'
+import { createMoveExplainer, type MoveExplainer } from './explainer'
 import { cardLine, gradeFeedback, ratingName } from './review'
 import { SidePanel } from './SidePanel'
 import { TrainerLayout } from './TrainerLayout'
@@ -43,6 +44,7 @@ type Loaded = {
 /** Study today's due cards, each played in the context of its line. */
 export function ReviewPage({ db: dbProp, nextCardDelayMs = NEXT_CARD_DELAY_MS }: ReviewPageProps) {
   const db = dbProp ?? getDb()
+  const explain = useMemo(() => createMoveExplainer(db), [db])
   const [loaded, setLoaded] = useState<Loaded>()
   const [error, setError] = useState<string>()
   const [openings, setOpenings] = useState<OpeningIndex>()
@@ -172,6 +174,7 @@ export function ReviewPage({ db: dbProp, nextCardDelayMs = NEXT_CARD_DELAY_MS }:
           : `${line.name}. Play your first move.`
       }
       onComplete={onComplete}
+      explain={explain}
       feedback={feedback}
       progress={{ current: answered + 1, total: answered + session.pending.length, answered }}
     />
@@ -182,16 +185,18 @@ function CardDrill({
   line,
   intro,
   onComplete,
+  explain,
   feedback,
   progress,
 }: {
   line: Line
   intro: string
   onComplete: (outcome: DrillOutcome) => void
+  explain: MoveExplainer
   feedback: string | undefined
   progress: { current: number; total: number; answered: number }
 }) {
-  const { board, panel } = useDrill(line, { onComplete, intro })
+  const { board, panel } = useDrill(line, { onComplete, intro, explain })
   return (
     <TrainerLayout>
       <Board {...board} />

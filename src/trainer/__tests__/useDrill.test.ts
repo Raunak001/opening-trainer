@@ -260,3 +260,64 @@ describe('useDrill line-context playback', () => {
     expect(onComplete).toHaveBeenCalledWith({ mistakes: 0, hintUsed: false, durationMs: 8_000 })
   })
 })
+
+describe('useDrill engine feedback', () => {
+  const explanation = {
+    grade: 'blunder' as const,
+    label: 'blunder',
+    reason: 'This leaves your pawn on d4 hanging.',
+    best: 'Best was e4 (+0.3).',
+    evalBest: '+0.3',
+    evalPlayed: '-0.8',
+    findings: [],
+  }
+
+  it('shows the reason after a first miss, without naming the better move', async () => {
+    const explain = vi.fn().mockResolvedValue(explanation)
+    const hook = renderHook(() => useDrill(italianLine('white'), { explain }))
+    move(hook, 'd2', 'd4')
+    expect(hook.result.current.panel.coachMessage).toBe('Not quite. Try again.')
+    await act(async () => {})
+    expect(explain).toHaveBeenCalledWith({
+      fen: START,
+      move: { from: 'd2', to: 'd4', promotion: undefined },
+      startFen: START,
+      previous: [],
+    })
+    expect(hook.result.current.panel.coachMessage).toBe(
+      'd4 is a blunder. This leaves your pawn on d4 hanging. Try again.',
+    )
+  })
+
+  it('names the better move once the arrow shows', async () => {
+    const explain = vi.fn().mockResolvedValue(explanation)
+    const hook = renderHook(() => useDrill(italianLine('white'), { explain }))
+    move(hook, 'd2', 'd4')
+    await act(async () => {})
+    wait(WRONG_FLASH_MS + ANIMATION_MS)
+    move(hook, 'd2', 'd4')
+    await act(async () => {})
+    expect(hook.result.current.panel.coachMessage).toBe(
+      'd4 is a blunder. This leaves your pawn on d4 hanging. Best was e4 (+0.3). Follow the arrow.',
+    )
+  })
+
+  it('drops an answer that arrives after the user moved on', async () => {
+    let resolve!: (value: typeof explanation) => void
+    const explain = vi.fn(() => new Promise<typeof explanation>((r) => (resolve = r)))
+    const hook = renderHook(() => useDrill(italianLine('white'), { explain }))
+    move(hook, 'd2', 'd4')
+    wait(WRONG_FLASH_MS + ANIMATION_MS)
+    move(hook, 'e2', 'e4')
+    await act(async () => resolve(explanation))
+    expect(hook.result.current.panel.coachMessage).toBe('e4 is correct!')
+  })
+
+  it('keeps the plain message when the engine fails', async () => {
+    const explain = vi.fn().mockRejectedValue(new Error('boom'))
+    const hook = renderHook(() => useDrill(italianLine('white'), { explain }))
+    move(hook, 'd2', 'd4')
+    await act(async () => {})
+    expect(hook.result.current.panel.coachMessage).toBe('Not quite. Try again.')
+  })
+})

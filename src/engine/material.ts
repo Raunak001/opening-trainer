@@ -209,6 +209,11 @@ export interface MaterialCheckInput {
 
 /** Material swings under one pawn are positional, not material, findings. */
 export const MIN_MATERIAL_SWING = 1
+/**
+ * A swing only counts when its last capture comes within this many plies; deeper ones are the
+ * engine's long-term judgement, not something a sentence about this move can show.
+ */
+export const MAX_MATERIAL_PLIES = 6
 
 export function materialFindings({
   fen,
@@ -226,16 +231,24 @@ export function materialFindings({
     bestPv.length > 0 && sameMove(fen, bestPv[0], move.from + move.to + (move.promotion ?? ''))
 
   const best = bestPv.length > 0 ? lineMaterial(fen, bestPv) : undefined
-  if (best && best.swing >= MIN_MATERIAL_SWING) {
-    findings.push({ type: 'best-wins-material', amount: best.swing, sans: best.sans })
+  if (
+    best &&
+    best.swing >= MIN_MATERIAL_SWING &&
+    upToLastCapture(best).length <= MAX_MATERIAL_PLIES
+  ) {
+    findings.push({ type: 'best-wins-material', amount: best.swing, sans: upToLastCapture(best) })
   }
 
   const playedLine = lineMaterial(fen, [move.san, ...replyPv])
-  if (!isBest && playedLine.swing <= -MIN_MATERIAL_SWING) {
+  if (
+    !isBest &&
+    playedLine.swing <= -MIN_MATERIAL_SWING &&
+    upToLastCapture(playedLine).length <= MAX_MATERIAL_PLIES
+  ) {
     findings.push({
       type: 'played-loses-material',
       amount: -playedLine.swing,
-      sans: playedLine.sans,
+      sans: upToLastCapture(playedLine),
     })
   }
 
@@ -268,6 +281,12 @@ export function materialFindingsForGrading(fen: string, grading: MoveGrading): M
     bestPv: grading.before.pv,
     replyPv: grading.after.pv,
   })
+}
+
+/** The line cut after its last capture: the moves that actually decide the material. */
+function upToLastCapture(line: LineMaterial): string[] {
+  const last = line.captures[line.captures.length - 1]
+  return last ? line.sans.slice(0, last.ply + 1) : line.sans
 }
 
 function tryPlay(chess: Chess, move: string) {

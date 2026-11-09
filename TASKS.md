@@ -59,7 +59,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 - [x] **T4.3a Material/hanging checks** (M) — play PV with chess.js, material swing; attackers vs defenders for hanging pieces. Fixture tests.
 - [x] **T4.3b Fork/missed-mate checks** (M) — port ideas from lichess-puzzler tagger. Fixture tests.
 - [x] **T4.4 Opening-principle rules** (M) — early queen, same piece twice, no castle by move 10, no central pawn, undeveloped minors.
-- [ ] **T4.5 Template phrase bank** (S) — finding → sentence with variables; wire into drill panel.
+- [x] **T4.5 Template phrase bank** (S) — finding → sentence with variables; wire into drill panel.
 - [ ] **T4.6 Repertoire sanity check** (S) — flag chosen moves losing > ~0.5 pawns vs best in the builder.
 - [ ] **T4.7 Play out from book** (M) — after a line ends, 10 moves vs limited-skill Stockfish with grading.
 

@@ -112,7 +112,7 @@ describe('materialFindings', () => {
       replyPv: ['b7a6', 'd2d4'],
     })
     expect(findings).toEqual([
-      { type: 'played-loses-material', amount: 3, sans: ['Ba6', 'bxa6', 'd4'] },
+      { type: 'played-loses-material', amount: 3, sans: ['Ba6', 'bxa6'] },
       {
         type: 'hangs-piece',
         piece: {
@@ -138,7 +138,7 @@ describe('materialFindings', () => {
     expect(findings).toContainEqual({
       type: 'best-wins-material',
       amount: 9,
-      sans: ['Nxh4', 'Nf6'],
+      sans: ['Nxh4'],
     })
     expect(findings).toContainEqual({
       type: 'played-loses-material',
@@ -159,7 +159,18 @@ describe('materialFindings', () => {
       bestPv: ['f3h4', 'g8f6'],
       replyPv: ['g8f6'],
     })
-    expect(findings).toEqual([{ type: 'best-wins-material', amount: 9, sans: ['Nxh4', 'Nf6'] }])
+    expect(findings).toEqual([{ type: 'best-wins-material', amount: 9, sans: ['Nxh4'] }])
+  })
+
+  it('ignores material that only falls deep in the line', () => {
+    // 1.e4 e5 2.Nf3 Nc6 3.h3: the engine's reply line drops a pawn only on its 9th ply.
+    const findings = materialFindings({
+      fen: NC6,
+      played: 'h3',
+      bestPv: ['f1b5'],
+      replyPv: ['g8f6', 'd2d3', 'd7d5', 'b1d2', 'f8c5', 'c2c3', 'a7a5', 'e4d5'],
+    })
+    expect(findings).toEqual([])
   })
 
   it('stays quiet for quiet moves', () => {

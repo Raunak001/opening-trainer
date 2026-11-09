@@ -1,13 +1,16 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Board } from '../board'
+import { getDb } from '../db'
 import type { Line } from './drill'
+import { createMoveExplainer } from './explainer'
 import { SAMPLE_LINES } from './sampleLines'
 import { SidePanel } from './SidePanel'
 import { TrainerLayout } from './TrainerLayout'
 import { useDrill } from './useDrill'
 
 function Drill({ line }: { line: Line }) {
-  const { board, panel, restart } = useDrill(line)
+  const explain = useMemo(() => createMoveExplainer(getDb()), [])
+  const { board, panel, restart } = useDrill(line, { explain })
   return (
     <>
       <TrainerLayout>

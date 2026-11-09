@@ -42,3 +42,6 @@ export { findForks, forkAt, tacticFindings, tacticFindingsForGrading } from './t
 export type { Fork, ForkTarget, TacticCheckInput, TacticFinding } from './tactics'
 export { DEFAULT_PRINCIPLE_OPTIONS, principleFindings } from './principles'
 export type { PrincipleFinding, PrincipleOptions } from './principles'
+export { amountWords, explainMove, fill, formatScore, GRADE_LABELS, PHRASES } from './explain'
+export type { ExplainInput, Explanation, Finding } from './explain'
+export { getSharedEngine } from './shared'

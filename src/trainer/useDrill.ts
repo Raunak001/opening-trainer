@@ -13,6 +13,7 @@ import {
   type DrillState,
   type Line,
 } from './drill'
+import { drillFeedback, type MoveExplainer } from './explainer'
 import type { SidePanelProps } from './SidePanel'
 
 /** Pause before the opponent replies, so the user sees their own move land. */
@@ -38,6 +39,8 @@ export interface DrillOptions {
   onComplete?: (outcome: DrillOutcome) => void
   /** Coach bubble text before the first move (default: "Let's drill the …"). */
   intro?: string
+  /** Engine feedback for wrong moves, shown in the coach bubble when it arrives. */
+  explain?: MoveExplainer
 }
 
 interface WrongMove {
@@ -59,7 +62,7 @@ function startMessage(line: Line) {
 
 /** Drives a drill: wires the pure state machine to the board and side panel. */
 export function useDrill(line: Line, options: DrillOptions = {}) {
-  const { onComplete, intro } = options
+  const { onComplete, intro, explain } = options
   const [drill, setDrill] = useState<DrillState>(() => createDrill(line))
   const [wrong, setWrong] = useState<WrongMove | null>(null)
   const [animating, setAnimating] = useState(false)
@@ -68,6 +71,8 @@ export function useDrill(line: Line, options: DrillOptions = {}) {
   const promptStart = useRef<number | null>(null)
   const thinkingMs = useRef(0)
   const completed = useRef(false)
+  // Bumped whenever the coach message moves on, so a late engine answer is dropped.
+  const explainSeq = useRef(0)
   const onCompleteRef = useRef(onComplete)
   useEffect(() => {
     onCompleteRef.current = onComplete
@@ -124,6 +129,7 @@ export function useDrill(line: Line, options: DrillOptions = {}) {
     (from: Key, to: Key, promotion?: PromotionPiece) => {
       const input = { from, to, promotion }
       const { state, result } = submitMove(drill, input)
+      if (result === 'correct' || result === 'wrong') explainSeq.current++
       if (result === 'correct') {
         if (promptStart.current !== null) thinkingMs.current += Date.now() - promptStart.current
         promptStart.current = null
@@ -134,9 +140,26 @@ export function useDrill(line: Line, options: DrillOptions = {}) {
         // Keep the wrong move on the board briefly, then snap back.
         setWrong({ fen: new Chess(drill.fen).move(input).after, from, to })
         setDrill(state)
-        setMessage(
-          state.hint === 'arrow' ? 'Not that one. Follow the arrow.' : 'Not quite. Try again.',
-        )
+        const arrow = state.hint === 'arrow'
+        setMessage(arrow ? 'Not that one. Follow the arrow.' : 'Not quite. Try again.')
+        if (explain) {
+          const seq = explainSeq.current
+          const san = new Chess(drill.fen).move(input).san
+          explain({
+            fen: drill.fen,
+            move: input,
+            startFen: line.startFen ?? new Chess().fen(),
+            previous: drill.steps.slice(0, drill.ply).map((s) => s.san),
+          })
+            .then((explanation) => {
+              if (!explanation || seq !== explainSeq.current) return
+              const next = arrow ? 'Follow the arrow.' : 'Try again.'
+              setMessage(`${drillFeedback(san, explanation, arrow)} ${next}`)
+            })
+            .catch(() => {
+              // Feedback is a bonus: the drill carries on with the plain message.
+            })
+        }
         later(() => {
           setWrong(null)
           setAnimating(true)
@@ -144,11 +167,12 @@ export function useDrill(line: Line, options: DrillOptions = {}) {
         }, WRONG_FLASH_MS)
       }
     },
-    [drill, later],
+    [drill, later, explain, line.startFen],
   )
 
   const onHint = useCallback(() => {
     const next = requestHint(drill)
+    explainSeq.current++
     setDrill(next)
     setMessage(next.hint === 'arrow' ? 'Play the move shown by the arrow.' : 'Move this piece.')
   }, [drill])
@@ -163,6 +187,7 @@ export function useDrill(line: Line, options: DrillOptions = {}) {
     promptStart.current = null
     thinkingMs.current = 0
     completed.current = false
+    explainSeq.current++
   }, [line, intro])
 
   const step = expectedMove(drill)
