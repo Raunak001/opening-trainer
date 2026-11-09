@@ -2,6 +2,10 @@ import { Rating } from 'ts-fsrs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Board } from '../board'
 import { getDb, getSettings, type AppSettings, type TrainerDB } from '../db'
+// Direct module imports: the lessons index re-exports pages that import this one's siblings.
+import type { Lesson, LessonPack } from '../lessons/lesson'
+import { bundledPacks } from '../lessons/packs'
+import { useLesson } from '../lessons/useLesson'
 import { loadRepertoire, type Repertoire } from '../repertoire/builder'
 import { loadOpeningIndex, openingFor, type OpeningIndex } from '../repertoire/openings'
 import {
@@ -11,6 +15,8 @@ import {
   createSession,
   currentCard,
   isFinished,
+  isLessonCard,
+  lessonForCard,
   loadDueQueue,
   outcomeDetails,
   reviewCard,
@@ -32,6 +38,8 @@ export interface ReviewPageProps {
   db?: TrainerDB
   /** Pause after each card; tests shorten it. */
   nextCardDelayMs?: number
+  /** Lesson packs for lesson cards; defaults to the bundled ones. */
+  packs?: readonly LessonPack[]
 }
 
 type Loaded = {
@@ -42,8 +50,13 @@ type Loaded = {
 }
 
 /** Study today's due cards, each played in the context of its line. */
-export function ReviewPage({ db: dbProp, nextCardDelayMs = NEXT_CARD_DELAY_MS }: ReviewPageProps) {
+export function ReviewPage({
+  db: dbProp,
+  nextCardDelayMs = NEXT_CARD_DELAY_MS,
+  packs: packsProp,
+}: ReviewPageProps) {
   const db = dbProp ?? getDb()
+  const packs = packsProp ?? bundledPacks().packs
   const explain = useMemo(() => createMoveExplainer(db), [db])
   const [loaded, setLoaded] = useState<Loaded>()
   const [error, setError] = useState<string>()
@@ -62,13 +75,17 @@ export function ReviewPage({ db: dbProp, nextCardDelayMs = NEXT_CARD_DELAY_MS }:
       const now = new Date()
       const [queue, settings] = await Promise.all([loadDueQueue(db, now), getSettings(db)])
       const repertoires = new Map<string, Repertoire>()
-      for (const id of new Set(queue.cards.map((c) => c.repertoireId))) {
+      for (const id of new Set(
+        queue.cards.filter((c) => !isLessonCard(c)).map((c) => c.repertoireId),
+      )) {
         const rep = await loadRepertoire(db, id)
         if (rep) repertoires.set(id, rep)
       }
       // Leave out cards whose position cannot be reached in their tree (they
-      // stay due; the next card sync suspends them).
+      // stay due; the next card sync suspends them), and lesson cards whose lesson
+      // is no longer bundled.
       const showable = queue.cards.filter((c) => {
+        if (isLessonCard(c)) return lessonForCard(c, packs) !== undefined
         const rep = repertoires.get(c.repertoireId)
         return rep !== undefined && isPlayable(c, rep.tree)
       })
@@ -89,11 +106,12 @@ export function ReviewPage({ db: dbProp, nextCardDelayMs = NEXT_CARD_DELAY_MS }:
     return () => {
       live = false
     }
-  }, [db, reloads])
+  }, [db, reloads, packs])
 
   const session = loaded?.session
   const card = session && currentCard(session)
   const repertoire = card && loaded?.repertoires.get(card.repertoireId)
+  const lesson = card && isLessonCard(card) ? lessonForCard(card, packs) : undefined
 
   const line = useMemo<Line | undefined>(() => {
     if (!card || !repertoire) return undefined
@@ -163,8 +181,19 @@ export function ReviewPage({ db: dbProp, nextCardDelayMs = NEXT_CARD_DELAY_MS }:
     )
   }
 
-  if (!line || !repertoire) return null
   const answered = answeredCount(session)
+  const progress = { current: answered + 1, total: answered + session.pending.length, answered }
+  if (card && lesson)
+    return (
+      <LessonCardDrill
+        key={`${card.id}#${turn}`}
+        lesson={lesson}
+        onComplete={onComplete}
+        feedback={feedback}
+        progress={progress}
+      />
+    )
+  if (!line || !repertoire) return null
   return (
     <CardDrill
       key={`${line.id}`}
@@ -177,8 +206,37 @@ export function ReviewPage({ db: dbProp, nextCardDelayMs = NEXT_CARD_DELAY_MS }:
       onComplete={onComplete}
       explain={explain}
       feedback={feedback}
-      progress={{ current: answered + 1, total: answered + session.pending.length, answered }}
+      progress={progress}
     />
+  )
+}
+
+/** A lesson card: the lesson position on its own, any accepted move counts. */
+function LessonCardDrill({
+  lesson,
+  onComplete,
+  feedback,
+  progress,
+}: {
+  lesson: Lesson
+  onComplete: (outcome: DrillOutcome) => void
+  feedback: string | undefined
+  progress: { current: number; total: number; answered: number }
+}) {
+  const { board, panel } = useLesson(lesson, { onSolved: onComplete })
+  return (
+    <TrainerLayout>
+      <Board {...board} />
+      <SidePanel
+        {...panel}
+        // Keep the lesson's explanation beside the grade.
+        coachMessage={feedback ? `${feedback} ${lesson.explanation}` : panel.coachMessage}
+        prompt={feedback ? 'Next card coming up…' : panel.prompt}
+        challenge={progress.current}
+        challengeCount={progress.total}
+        completed={progress.answered}
+      />
+    </TrainerLayout>
   )
 }
 

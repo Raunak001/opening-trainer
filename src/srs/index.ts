@@ -49,3 +49,13 @@ export {
   type Streak,
   type TodayCounts,
 } from './progress'
+export {
+  isLessonCard,
+  LESSON_REPERTOIRE_PREFIX,
+  lessonCardId,
+  lessonForCard,
+  lessonRepertoireId,
+  newLessonCard,
+  recordLessonSolved,
+  type LessonSolvedResult,
+} from './lessonCards'

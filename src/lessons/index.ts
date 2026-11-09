@@ -75,3 +75,4 @@ export {
   type VerifyManyOptions,
   type VerifyOptions,
 } from './verify'
+export { saveSolvedLesson } from './saveSolved'

@@ -1,7 +1,11 @@
+import 'fake-indexeddb/auto'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import type { Key } from 'chessground/types'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import Dexie from 'dexie'
 import type { BoardProps } from '../../board'
+import { TrainerDB } from '../../db'
+import { lessonCardId } from '../../srs'
 import { LessonsPage } from '../LessonsPage'
 import { CENTER, PACK } from './fixtures'
 
@@ -106,5 +110,29 @@ describe('LessonsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     expect(board.current?.fen).toBe(CENTER.fen)
     expect(board.current?.interactive).toBe(true)
+  })
+})
+
+describe('LessonsPage saving solves', () => {
+  it('turns the first solve into a review card and says when it is due', async () => {
+    const db = new TrainerDB('lessons-page-save')
+    try {
+      render(<LessonsPage db={db} packs={{ packs: [PACK], errors: [] }} />)
+      fireEvent.click(screen.getByRole('button', { name: /Test pack/ }))
+      move('d2', 'd4')
+      expect(await screen.findByRole('status')).toHaveTextContent(
+        /^Added to your reviews \((Good|Easy)\): back in \d+ days?\.$/,
+      )
+      expect(await db.cards.get(lessonCardId(PACK.id, CENTER.fen))).toMatchObject({
+        origin: 'lesson',
+      })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+      move('d2', 'd4')
+      expect(await screen.findByText('Already in your reviews.')).toBeInTheDocument()
+    } finally {
+      db.close()
+      await Dexie.delete('lessons-page-save')
+    }
   })
 })

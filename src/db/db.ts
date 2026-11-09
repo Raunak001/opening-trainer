@@ -117,13 +117,17 @@ export interface CardRow extends Card {
   suspended?: boolean
   /**
    * `game`: created from an imported game where the opponent left the book (T5.4).
-   * The position is not in the tree, so the card carries its own `line`. Absent → tree card.
+   * The position is not in the tree, so the card carries its own `line`.
+   * `lesson`: a solved concept lesson (T6.5); `repertoireId` is `lessons/<pack id>` and
+   * `lessonId` names the lesson. Absent → tree card.
    */
-  origin?: 'game'
+  origin?: 'game' | 'lesson'
   /** SAN moves from the initial position to the card's position (game cards only). */
   line?: string[]
   /** Game the card was created from (game cards only). */
   gameId?: string
+  /** Lesson the card was created from (lesson cards only). */
+  lessonId?: string
 }
 
 /** What happened in the review, beyond the rating (filled by the drill, T3.3+). */

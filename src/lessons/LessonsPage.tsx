@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getDb, type TrainerDB } from '../db'
 import type { DrillOutcome } from '../trainer/useDrill'
 import { AuthorPage, type AuthorPageProps } from './AuthorPage'
 import { conceptLabel, type Lesson, type LessonPack } from './lesson'
@@ -6,12 +7,22 @@ import { LessonPlayer } from './LessonPlayer'
 import { MinePage, type MinePageProps } from './MinePage'
 import type { MinedCandidate } from './mining'
 import { bundledPacks, type LoadedPacks } from './packs'
+import { saveSolvedLesson } from './saveSolved'
 import './lessons.css'
 
 export interface LessonsPageProps {
+  db?: TrainerDB
   /** Packs to offer; defaults to the bundled ones. */
   packs?: LoadedPacks
-  onSolved?: (pack: LessonPack, lesson: Lesson, outcome: DrillOutcome) => void
+  /**
+   * Called for every solve. Defaults to `saveSolvedLesson`: the first solve of a lesson
+   * becomes a review card.
+   */
+  onSolved?: (
+    pack: LessonPack,
+    lesson: Lesson,
+    outcome: DrillOutcome,
+  ) => Promise<string | undefined> | undefined
   /** Passed to the authoring tool (tests inject an engine). */
   author?: Omit<AuthorPageProps, 'packs' | 'pack' | 'onPackChange' | 'load'>
   /** Passed to the miner (tests inject a database and explorer client). */
@@ -31,8 +42,18 @@ function concepts(pack: LessonPack): string {
 }
 
 /** Play lesson packs, or author new ones. */
-export function LessonsPage({ packs: packsProp, onSolved, author, mine }: LessonsPageProps) {
+export function LessonsPage({
+  db: dbProp,
+  packs: packsProp,
+  onSolved: onSolvedProp,
+  author,
+  mine,
+}: LessonsPageProps) {
   const loaded = packsProp ?? bundledPacks()
+  const onSolved =
+    onSolvedProp ??
+    ((pack: LessonPack, lesson: Lesson, outcome: DrillOutcome) =>
+      saveSolvedLesson(dbProp ?? getDb(), pack, lesson, outcome))
   const [tab, setTab] = useState<Tab>('play')
   // Kept here so the pack being authored survives a trip to the miner.
   const [draft, setDraft] = useState<LessonPack>({ id: '', name: '', lessons: [] })

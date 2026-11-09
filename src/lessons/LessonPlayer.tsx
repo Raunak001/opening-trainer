@@ -8,8 +8,11 @@ import { useLesson } from './useLesson'
 
 export interface LessonPlayerProps {
   pack: LessonPack
-  /** Called each time a lesson is solved (every solve, including replays). */
-  onSolved?: (lesson: Lesson, outcome: DrillOutcome) => void
+  /**
+   * Called each time a lesson is solved (every solve, including replays). May resolve to a
+   * line to show under the board, e.g. when the lesson's card is due next.
+   */
+  onSolved?: (lesson: Lesson, outcome: DrillOutcome) => Promise<string | undefined> | undefined
   /** Back to the pack list. */
   onExit?: () => void
 }
@@ -20,13 +23,23 @@ export function LessonPlayer({ pack, onSolved, onExit }: LessonPlayerProps) {
   const [solved, setSolved] = useState<ReadonlySet<string>>(() => new Set())
   // Bumped by "Try again" so the same lesson restarts with a fresh attempt.
   const [round, setRound] = useState(0)
+  const [saved, setSaved] = useState<string>()
   const lesson = pack.lessons[index]
   const last = index === pack.lessons.length - 1
   const done = solved.size === pack.lessons.length
 
   const handleSolved = (l: Lesson, outcome: DrillOutcome) => {
     setSolved((s) => new Set(s).add(l.id))
-    onSolved?.(l, outcome)
+    const result = onSolved?.(l, outcome)
+    if (result)
+      result
+        .then((text) => setSaved(text))
+        .catch((error: unknown) => setSaved(`Could not save the card: ${String(error)}`))
+  }
+
+  const go = (next: number) => {
+    setIndex(next)
+    setSaved(undefined)
   }
 
   return (
@@ -38,8 +51,8 @@ export function LessonPlayer({ pack, onSolved, onExit }: LessonPlayerProps) {
         challenge={index + 1}
         challengeCount={pack.lessons.length}
         completed={solved.size}
-        onBack={() => setIndex((i) => Math.max(0, i - 1))}
-        onForward={() => setIndex((i) => Math.min(pack.lessons.length - 1, i + 1))}
+        onBack={() => go(Math.max(0, index - 1))}
+        onForward={() => go(Math.min(pack.lessons.length - 1, index + 1))}
         canGoBack={index > 0}
         canGoForward={!last}
       />
@@ -53,11 +66,17 @@ export function LessonPlayer({ pack, onSolved, onExit }: LessonPlayerProps) {
           Try again
         </button>
         {solved.has(lesson.id) && !last && (
-          <button type="button" onClick={() => setIndex(index + 1)}>
+          <button type="button" onClick={() => go(index + 1)}>
             Next lesson
           </button>
         )}
-        {done && <span role="status">Pack complete: all {pack.lessons.length} solved.</span>}
+        {(saved || done) && (
+          <span role="status">
+            {[saved, done && `Pack complete: all ${pack.lessons.length} solved.`]
+              .filter(Boolean)
+              .join(' ')}
+          </span>
+        )}
       </div>
     </>
   )
