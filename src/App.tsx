@@ -1,8 +1,10 @@
 import { useState } from 'react'
+// Not re-exported from the db index, which pure code imports: keep React out of it.
+import { BackupPage } from './db/BackupPage'
 import { BuilderPage, TreeViewer } from './repertoire'
 import { DrillPage, ProgressPage, ReviewPage } from './trainer'
 
-type View = 'review' | 'progress' | 'drill' | 'build' | 'tree'
+type View = 'review' | 'progress' | 'drill' | 'build' | 'tree' | 'backup'
 
 const VIEWS: { id: View; label: string }[] = [
   { id: 'drill', label: 'Drill' },
@@ -10,6 +12,7 @@ const VIEWS: { id: View; label: string }[] = [
   { id: 'progress', label: 'Progress' },
   { id: 'build', label: 'Build' },
   { id: 'tree', label: 'Tree' },
+  { id: 'backup', label: 'Backup' },
 ]
 
 function App() {
@@ -34,6 +37,7 @@ function App() {
       {view === 'drill' && <DrillPage />}
       {view === 'build' && <BuilderPage />}
       {view === 'tree' && <TreeViewer />}
+      {view === 'backup' && <BackupPage />}
     </>
   )
 }

@@ -34,6 +34,10 @@ describe('App', () => {
       ),
     ).toBeInTheDocument()
 
+    fireEvent.click(screen.getByRole('button', { name: 'Backup' }))
+    expect(screen.getByRole('heading', { name: 'Backup' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Export backup' })).toBeInTheDocument()
+
     fireEvent.click(screen.getByRole('button', { name: 'Drill' }))
     expect(screen.getByText('Challenge 1/8')).toBeInTheDocument()
   })

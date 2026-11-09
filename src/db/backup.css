@@ -1,0 +1,117 @@
+/* Backup page. Same dark palette as the rest of the app. */
+.backup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+  width: min(640px, 100%);
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.backup__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #262421;
+}
+
+.backup h1,
+.backup h2,
+.backup p {
+  margin: 0;
+}
+
+.backup h1 {
+  font-size: 20px;
+}
+
+.backup h2 {
+  font-size: 17px;
+}
+
+.backup__muted {
+  color: #bababa;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.backup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.backup button {
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 6px;
+  background: #3c3a37;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.backup button:hover:not(:disabled) {
+  background: #4b4946;
+}
+
+.backup button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.backup button:focus-visible {
+  outline: 2px solid #81b64c;
+  outline-offset: 2px;
+}
+
+.backup .backup__primary {
+  background: #81b64c;
+}
+
+.backup .backup__primary:hover:not(:disabled) {
+  background: #a3d160;
+}
+
+.backup .backup__danger {
+  background: #b23b3b;
+}
+
+.backup .backup__danger:hover:not(:disabled) {
+  background: #c94a4a;
+}
+
+.backup__confirm {
+  border: 2px solid #b23b3b;
+}
+
+.backup__warning,
+.backup__error {
+  color: #fa7c7c;
+  font-size: 14px;
+}
+
+.backup__ok {
+  color: #81b64c;
+}
+
+.backup__counts {
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.backup__counts th {
+  padding: 3px 16px 3px 0;
+  color: #bababa;
+  font-weight: 400;
+  text-align: left;
+}
+
+.backup__counts td {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

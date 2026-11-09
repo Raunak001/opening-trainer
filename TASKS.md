@@ -48,7 +48,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 - [x] **T3.4a Due queue** (M) — query due cards, new/review daily caps, same-session requeue for Again. Pure + tested.
 - [x] **T3.4b Line-context playback** (M) — for each card walk parent links to root, fast-play prefix, then prompt. Reuses drill UI.
 - [x] **T3.5 Progress view** (M) — due today, new left, streak, mastery per line from mean stability.
-- [ ] **T3.6 Backup/restore** (S) — export all tables to JSON, import with confirmation. **Do this before using the app daily.**
+- [x] **T3.6 Backup/restore** (S) — export all tables to JSON, import with confirmation. **Do this before using the app daily.**
 
 ## Phase 4 — Engine feedback
 

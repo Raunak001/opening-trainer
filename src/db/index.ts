@@ -23,3 +23,18 @@ export {
   type AppSettings,
   type SettingsPatch,
 } from './settings'
+export {
+  BACKUP_FORMAT,
+  BACKUP_TABLES,
+  BACKUP_VERSION,
+  backupCounts,
+  BackupError,
+  backupFileName,
+  exportBackup,
+  parseBackup,
+  restoreBackup,
+  serializeBackup,
+  type Backup,
+  type BackupCounts,
+  type BackupTable,
+} from './backup'
