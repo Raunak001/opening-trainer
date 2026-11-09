@@ -11,6 +11,8 @@ import {
   enumerateLines,
   lineCards,
   lineStatus,
+  openingFamily,
+  type ChapterRoot,
   type CourseLine,
   type LineStatus,
 } from '../repertoire/lines'
@@ -97,6 +99,8 @@ export interface CourseDetail {
   next: NextLine
   /** New cards today's cap still allows. */
   newCardsLeft: number
+  /** Today's whole new-card cap. */
+  newCardsTotal: number
 }
 
 /** Everything the course page and Learn mode need; undefined if not started. */
@@ -128,7 +132,14 @@ export async function loadCourse(
         counts: courseCounts(lines, dueCount(cardRows, now)),
         next: nextLineToLearn(lines, cards, { left, total }),
         newCardsLeft: left,
+        newCardsTotal: total,
       }
     },
   )
+}
+
+/** How a catalog entry names its chapters (see `chapterName`). */
+export function chapterRoot(entry: CatalogEntry): ChapterRoot {
+  const startName = entry.tsvName ?? entry.name
+  return { startName, families: new Set([openingFamily(entry.name), openingFamily(startName)]) }
 }

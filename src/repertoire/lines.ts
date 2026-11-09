@@ -138,3 +138,78 @@ export function lineStatus(lineCardsInOrder: readonly CardRow[]): LineStatus {
 export function cardsByPosition(cards: readonly CardRow[]): Map<PositionKey, CardRow> {
   return new Map(cards.map((c) => [c.positionKey, c]))
 }
+
+/** A group of a course's lines, like a chapter in a course library (T7.10). */
+export interface Chapter<L extends CourseLine = CourseLine> {
+  /** Display name, also the id within a course. */
+  name: string
+  /** Lines in frequency order. */
+  lines: L[]
+  /** Summed frequency of the chapter's lines: how often you will be in it. */
+  frequency: number
+}
+
+/** Chapter for lines whose name gives no variation. */
+export const OTHER_LINES = 'Other lines'
+
+/** What a course calls itself, for naming its chapters. */
+export interface ChapterRoot {
+  /** TSV name of the course's start position, e.g. "Caro-Kann Defense". */
+  startName: string
+  /** Opening families that are the course itself, e.g. "Caro-Kann Defense". */
+  families: ReadonlySet<string>
+}
+
+/** The family part of an opening name: "Caro-Kann Defense: Advance Variation" → "Caro-Kann Defense". */
+export function openingFamily(name: string): string {
+  return name.split(':')[0].trim()
+}
+
+/**
+ * The chapter a line belongs in, from its (deepest) opening name:
+ * - in the course's own family, the variation: "Caro-Kann Defense: Advance
+ *   Variation, Short Variation" → "Advance Variation";
+ * - in another family, the family: a 1…e5 course's "Ruy Lopez: Morphy
+ *   Defense" → "Ruy Lopez";
+ * - no name, or only the start position's name → "Other lines".
+ */
+export function chapterName(openingName: string | undefined, root: ChapterRoot): string {
+  if (!openingName || openingName === root.startName) return OTHER_LINES
+  const colon = openingName.indexOf(':')
+  if (colon < 0) return openingName
+  const family = openingFamily(openingName)
+  if (!root.families.has(family)) return family
+  return (
+    openingName
+      .slice(colon + 1)
+      .split(',')[0]
+      .trim() || OTHER_LINES
+  )
+}
+
+/**
+ * Groups lines into chapters by variation (pure). Chapters are ordered by how
+ * often you meet them, "Other lines" last; lines keep their order inside.
+ */
+export function groupChapters<L extends CourseLine>(
+  lines: readonly L[],
+  chapterOf: (line: L) => string,
+): Chapter<L>[] {
+  const byName = new Map<string, Chapter<L>>()
+  for (const line of lines) {
+    const name = chapterOf(line)
+    let chapter = byName.get(name)
+    if (!chapter) {
+      chapter = { name, lines: [], frequency: 0 }
+      byName.set(name, chapter)
+    }
+    chapter.lines.push(line)
+    chapter.frequency += line.frequency
+  }
+  return [...byName.values()].sort(
+    (a, b) =>
+      Number(a.name === OTHER_LINES) - Number(b.name === OTHER_LINES) ||
+      b.frequency - a.frequency ||
+      a.name.localeCompare(b.name),
+  )
+}

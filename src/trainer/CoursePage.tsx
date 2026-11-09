@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { State } from 'ts-fsrs'
 import { getDb, type TrainerDB } from '../db'
 import type { BuildProgress } from '../repertoire/builder'
@@ -7,10 +7,17 @@ import { formatLine } from '../repertoire/builderForm'
 import { catalogEntry, type CatalogEntry } from '../repertoire/catalog'
 import { buildCourse, TIER_ORDER, TIERS, type CourseTier } from '../repertoire/courses'
 import { getExplorerClient, type ExplorerClient } from '../repertoire/explorer'
-import { lineCards, lineName, type CourseLine } from '../repertoire/lines'
+import {
+  chapterName,
+  groupChapters,
+  lineCards,
+  lineName,
+  type CourseLine,
+} from '../repertoire/lines'
 import { loadOpeningIndex, type OpeningIndex } from '../repertoire/openings'
 import type { PositionKey } from '../repertoire/positionKey'
-import { loadCourse, type CourseDetail, type LineWithStatus } from './courseData'
+import { chapterRoot, loadCourse, type CourseDetail, type LineWithStatus } from './courseData'
+import { nextLineToLearn } from './learn'
 import { LearnView } from './LearnView'
 import { LinePreview } from './LinePreview'
 import { ReviewPage } from './ReviewPage'
@@ -31,7 +38,11 @@ type Build =
   | { kind: 'cancelled' }
   | { kind: 'error'; message: string }
 
-type Mode = { kind: 'overview' } | { kind: 'learn'; lineId: PositionKey } | { kind: 'practice' }
+type Mode =
+  | { kind: 'overview' }
+  /** `chapter`: Learn was started from a chapter, so "Next line" stays in it. */
+  | { kind: 'learn'; lineId: PositionKey; chapter?: string }
+  | { kind: 'practice' }
 
 const STATUS_LABEL = { new: 'New', learning: 'Relearning', learned: 'Learned' } as const
 
@@ -115,8 +126,9 @@ export function CoursePage({ entryId, onBack, db: dbProp, client: clientProp }: 
           onExit={() => setMode({ kind: 'overview' })}
           onNext={() => {
             // The live query has the saved reviews by the time the button shows.
-            if (detail.next.line && detail.next.line.id !== line.id)
-              setMode({ kind: 'learn', lineId: detail.next.line.id })
+            const next = nextLine(detail, openings, entry, mode.chapter)
+            if (next && next.id !== line.id)
+              setMode({ kind: 'learn', lineId: next.id, chapter: mode.chapter })
             else setMode({ kind: 'overview' })
           }}
         />
@@ -172,11 +184,11 @@ export function CoursePage({ entryId, onBack, db: dbProp, client: clientProp }: 
         )}
       </section>
       {detail && (
-        <LineList
-          lines={detail.lines}
+        <ChapterList
+          detail={detail}
           entry={entry}
           openings={openings}
-          onLearn={(lineId) => setMode({ kind: 'learn', lineId })}
+          onLearn={(lineId, chapter) => setMode({ kind: 'learn', lineId, chapter })}
         />
       )}
     </main>
@@ -344,7 +356,140 @@ function CourseOverview({
   )
 }
 
-function LineList({
+/** A course's lines in chapters; one "All lines" chapter until opening names load. */
+function courseChapters<L extends CourseLine>(
+  lines: readonly L[],
+  openings: OpeningIndex | undefined,
+  entry: CatalogEntry,
+) {
+  const root = chapterRoot(entry)
+  return groupChapters(lines, (line) =>
+    openings ? chapterName(lineName(line.positions, openings), root) : 'All lines',
+  )
+}
+
+/** The next line to learn, inside a chapter when one is given. */
+function nextLine(
+  detail: CourseDetail,
+  openings: OpeningIndex | undefined,
+  entry: CatalogEntry,
+  chapter?: string,
+): CourseLine | undefined {
+  if (chapter === undefined) return detail.next.line
+  const lines = courseChapters(detail.lines, openings, entry).find((c) => c.name === chapter)?.lines
+  return lines
+    ? nextLineToLearn(lines, detail.cards, {
+        left: detail.newCardsLeft,
+        total: detail.newCardsTotal,
+      }).line
+    : undefined
+}
+
+function ChapterList({
+  detail,
+  entry,
+  openings,
+  onLearn,
+}: {
+  detail: CourseDetail
+  entry: CatalogEntry
+  openings: OpeningIndex | undefined
+  onLearn: (lineId: PositionKey, chapter: string) => void
+}) {
+  const { lines } = detail
+  const chapters = useMemo(() => courseChapters(lines, openings, entry), [lines, openings, entry])
+  // The first chapter starts open; the rest open on demand.
+  const [open, setOpen] = useState<ReadonlySet<string>>(new Set())
+  const [closed, setClosed] = useState<ReadonlySet<string>>(new Set())
+  const isOpen = (name: string, i: number) => open.has(name) || (i === 0 && !closed.has(name))
+  const toggle = (name: string, i: number) => {
+    if (isOpen(name, i)) {
+      setOpen((s) => new Set([...s].filter((n) => n !== name)))
+      setClosed((s) => new Set(s).add(name))
+    } else {
+      setOpen((s) => new Set(s).add(name))
+      setClosed((s) => new Set([...s].filter((n) => n !== name)))
+    }
+  }
+
+  if (lines.length === 0)
+    return (
+      <section className="course__panel" aria-label="Chapters">
+        <p className="course__muted">No lines: the explorer had no games here.</p>
+      </section>
+    )
+
+  return (
+    <section className="course__chapters" aria-label="Chapters">
+      <h2 className="course__chapters-title">
+        {chapters.length} {chapters.length === 1 ? 'chapter' : 'chapters'} · {lines.length} lines
+      </h2>
+      {chapters.map((chapter, i) => {
+        const learned = chapter.lines.filter((l) => l.status === 'learned').length
+        const next = nextLineToLearn(chapter.lines, detail.cards, {
+          left: detail.newCardsLeft,
+          total: detail.newCardsTotal,
+        })
+        const expanded = isOpen(chapter.name, i)
+        const pct = Math.round((learned / chapter.lines.length) * 100)
+        return (
+          <section
+            key={chapter.name}
+            className="course__panel course__chapter"
+            aria-label={chapter.name}
+          >
+            <header className="course__chapter-header">
+              <button
+                type="button"
+                className="course__chapter-toggle"
+                aria-expanded={expanded}
+                onClick={() => toggle(chapter.name, i)}
+              >
+                <span aria-hidden="true">{expanded ? '▾' : '▸'}</span>
+                <span className="course__chapter-name">
+                  {i + 1}. {chapter.name}
+                </span>
+              </button>
+              <span className="course__chapter-progress">
+                <span
+                  className="course__bar"
+                  role="meter"
+                  aria-label={`${chapter.name} lines learned`}
+                  aria-valuemin={0}
+                  aria-valuemax={chapter.lines.length}
+                  aria-valuenow={learned}
+                >
+                  <span style={{ width: `${pct}%` }} />
+                </span>
+                <span className="course__muted">
+                  {learned}/{chapter.lines.length} learned
+                </span>
+              </span>
+              <button
+                type="button"
+                className="course__primary"
+                disabled={!next.line}
+                onClick={() => next.line && onLearn(next.line.id, chapter.name)}
+              >
+                {next.line ? 'Learn' : next.reason === 'cap' ? 'Daily limit' : 'Done'}
+              </button>
+            </header>
+            {expanded && (
+              <LineRows
+                lines={chapter.lines}
+                entry={entry}
+                openings={openings}
+                onLearn={(id) => onLearn(id, chapter.name)}
+              />
+            )}
+          </section>
+        )
+      })}
+    </section>
+  )
+}
+
+function LineRows({
   lines,
   entry,
   openings,
@@ -357,46 +502,39 @@ function LineList({
 }) {
   const [preview, setPreview] = useState<PositionKey>()
   return (
-    <section className="course__panel" aria-label="Lines">
-      <h2 style={{ margin: 0, fontSize: 17 }}>Lines ({lines.length}), most common first</h2>
-      {lines.length === 0 ? (
-        <p className="course__muted">No lines: the explorer had no games here.</p>
-      ) : (
-        <ol className="course__lines">
-          {lines.map((line) => {
-            const name = displayName(line, openings, entry.name)
-            const open = preview === line.id
-            return (
-              <li key={line.id} className="course__line">
-                <span className="course__line-text">
-                  <span className="course__line-name">{name}</span>
-                  <span className="course__line-moves">{formatLine(line.moves)}</span>
-                </span>
-                <span className={`course__badge course__badge--${line.status}`}>
-                  {STATUS_LABEL[line.status]}
-                </span>
-                <span className="course__actions">
-                  <button
-                    type="button"
-                    aria-expanded={open}
-                    onClick={() => setPreview(open ? undefined : line.id)}
-                  >
-                    {open ? 'Hide' : 'Preview'}
-                  </button>
-                  <button type="button" onClick={() => onLearn(line.id)}>
-                    {line.status === 'new' ? 'Learn' : 'Relearn'}
-                  </button>
-                </span>
-                {open && (
-                  <div className="course__line-preview">
-                    <LinePreview moves={line.moves} orientation={entry.color} title={name} />
-                  </div>
-                )}
-              </li>
-            )
-          })}
-        </ol>
-      )}
-    </section>
+    <ol className="course__lines">
+      {lines.map((line) => {
+        const name = displayName(line, openings, entry.name)
+        const open = preview === line.id
+        return (
+          <li key={line.id} className="course__line">
+            <span className="course__line-text">
+              <span className="course__line-name">{name}</span>
+              <span className="course__line-moves">{formatLine(line.moves)}</span>
+            </span>
+            <span className={`course__badge course__badge--${line.status}`}>
+              {STATUS_LABEL[line.status]}
+            </span>
+            <span className="course__actions">
+              <button
+                type="button"
+                aria-expanded={open}
+                onClick={() => setPreview(open ? undefined : line.id)}
+              >
+                {open ? 'Hide' : 'Preview'}
+              </button>
+              <button type="button" onClick={() => onLearn(line.id)}>
+                {line.status === 'new' ? 'Learn' : 'Relearn'}
+              </button>
+            </span>
+            {open && (
+              <div className="course__line-preview">
+                <LinePreview moves={line.moves} orientation={entry.color} title={name} />
+              </div>
+            )}
+          </li>
+        )
+      })}
+    </ol>
   )
 }

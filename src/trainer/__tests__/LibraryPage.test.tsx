@@ -87,12 +87,30 @@ describe('CoursePage', () => {
     expect(
       await screen.findByText(/^Built: \d+ positions, 5 cards\.$/, {}, { timeout: 5000 }),
     ).toBeInTheDocument()
-    const lines = await screen.findByRole('region', { name: 'Lines' }, { timeout: 5000 })
-    const rows = within(lines).getAllByRole('listitem')
-    expect(rows).toHaveLength(2)
-    // Most common first: 2.d4 (60%) before 2.Nc3 (30%).
+    // One chapter per variation, most common first, once opening names load.
+    const advance = await screen.findByRole(
+      'region',
+      { name: 'Advance Variation' },
+      { timeout: 5000 },
+    )
+    const chapters = screen.getByRole('region', { name: 'Chapters' })
+    expect(chapters).toHaveTextContent('2 chapters · 2 lines')
+    expect(within(chapters).getByText('1. Advance Variation')).toBeInTheDocument()
+    expect(within(chapters).getByText('2. Two Knights Attack')).toBeInTheDocument()
+    // The first chapter is open; the second opens on demand.
+    const rows = within(advance).getAllByRole('listitem')
+    expect(rows).toHaveLength(1)
     expect(rows[0]).toHaveTextContent('1.e4 c6 2.d4 d5 3.e5 Bf5')
     expect(rows[0]).toHaveTextContent('New')
+    const twoKnights = screen.getByRole('region', { name: 'Two Knights Attack' })
+    expect(within(twoKnights).queryByRole('listitem')).not.toBeInTheDocument()
+    fireEvent.click(within(twoKnights).getByRole('button', { name: /Two Knights Attack/ }))
+    expect(within(twoKnights).getAllByRole('listitem')[0]).toHaveTextContent(
+      '1.e4 c6 2.Nc3 d5 3.Nf3 Bg4',
+    )
+    expect(
+      within(advance).getByRole('meter', { name: 'Advance Variation lines learned' }),
+    ).toHaveAttribute('aria-valuenow', '0')
     expect(screen.getByText('Advanced')).toBeInTheDocument()
     // Cards sync just after the tree is saved; the Learn button follows them.
     expect(
@@ -103,6 +121,10 @@ describe('CoursePage', () => {
     expect(within(rows[0]).getByText('6/6')).toBeInTheDocument()
     fireEvent.click(within(rows[0]).getByRole('button', { name: 'Back' }))
     expect(within(rows[0]).getByText('5/6')).toBeInTheDocument()
+
+    // A chapter's own Learn button starts that chapter's next line.
+    fireEvent.click(within(twoKnights).getAllByRole('button', { name: 'Learn' })[0])
+    expect(await screen.findByText(/Two Knights Attack.* · 3 new moves/)).toBeInTheDocument()
   })
 
   it('opens Learn on the most common line', async () => {
@@ -120,7 +142,7 @@ describe('CoursePage', () => {
     expect(screen.getByText(/Now you play it/)).toBeInTheDocument()
     // Playing the line back is covered by the useLearn and learn tests.
     fireEvent.click(screen.getByRole('button', { name: 'Back to course' }))
-    expect(await screen.findByRole('region', { name: 'Lines' })).toBeInTheDocument()
+    expect(await screen.findByRole('region', { name: 'Chapters' })).toBeInTheDocument()
   })
 })
 

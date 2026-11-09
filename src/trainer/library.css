@@ -371,3 +371,69 @@
     justify-self: start;
   }
 }
+
+/* Chapters (T7.10) */
+.course__chapters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.course__chapters-title {
+  margin: 0;
+  font-size: 17px;
+}
+
+.course__chapter {
+  padding: 12px;
+}
+
+.course__chapter-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.course button.course__chapter-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 180px;
+  padding: 4px 0;
+  background: transparent;
+  text-align: left;
+}
+
+.course button.course__chapter-toggle:hover:not(:disabled) {
+  background: transparent;
+  color: var(--panel-accent-hover);
+}
+
+.course__chapter-name {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.course__chapter-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.course__bar {
+  display: block;
+  width: 120px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--panel-raised);
+}
+
+.course__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--panel-accent);
+}

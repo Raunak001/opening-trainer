@@ -1,7 +1,16 @@
 import { createEmptyCard, State } from 'ts-fsrs'
 import { describe, expect, it } from 'vitest'
 import type { CardRow } from '../../db'
-import { cardsByPosition, enumerateLines, lineCards, lineStatus } from '../lines'
+import {
+  cardsByPosition,
+  chapterName,
+  enumerateLines,
+  groupChapters,
+  lineCards,
+  lineStatus,
+  OTHER_LINES,
+  type CourseLine,
+} from '../lines'
 import { buildOpeningIndex, parseOpeningsTsv } from '../openings'
 import { addMove, createTree, setNodeStats, type GameStats, type RepertoireTree } from '../tree'
 import { keyAfter } from './fakeWorld'
@@ -141,5 +150,59 @@ describe('lineStatus', () => {
     expect(status(State.Learning, State.Learning, State.Review)).toBe('learned')
     expect(status(State.Review, State.Review, State.Review)).toBe('learned')
     expect(status(State.Review, State.Relearning, State.Review)).toBe('learning')
+  })
+})
+
+describe('chapters', () => {
+  it('names chapters by variation in the course family, by family otherwise', () => {
+    const caro = { startName: 'Caro-Kann Defense', families: new Set(['Caro-Kann Defense']) }
+    expect(chapterName('Caro-Kann Defense: Advance Variation, Short Variation', caro)).toBe(
+      'Advance Variation',
+    )
+    expect(chapterName('Caro-Kann Defense: Exchange Variation', caro)).toBe('Exchange Variation')
+    expect(chapterName('Caro-Kann Defense', caro)).toBe(OTHER_LINES)
+    expect(chapterName(undefined, caro)).toBe(OTHER_LINES)
+
+    const e5 = { startName: "King's Pawn Game", families: new Set(["King's Pawn Game"]) }
+    expect(chapterName('Ruy Lopez: Morphy Defense', e5)).toBe('Ruy Lopez')
+    expect(chapterName('Italian Game', e5)).toBe('Italian Game')
+    expect(chapterName("King's Pawn Game: Wayward Queen Attack", e5)).toBe('Wayward Queen Attack')
+
+    const london = {
+      startName: "Queen's Pawn Game",
+      families: new Set(['London System', "Queen's Pawn Game"]),
+    }
+    expect(chapterName("Queen's Pawn Game: London System", london)).toBe('London System')
+    expect(chapterName('London System', london)).toBe('London System')
+  })
+
+  it('groups lines by chapter, most frequent first, other lines last', () => {
+    const line = (id: string, frequency: number): CourseLine => ({
+      id,
+      moves: [id],
+      positions: [],
+      frequency,
+    })
+    const chapterOf: Record<string, string> = {
+      a1: 'Advance Variation',
+      x1: 'Exchange Variation',
+      o1: OTHER_LINES,
+      a2: 'Advance Variation',
+      x2: 'Exchange Variation',
+    }
+    const lines = [
+      line('o1', 0.4),
+      line('a1', 0.3),
+      line('x1', 0.2),
+      line('a2', 0.1),
+      line('x2', 0.05),
+    ]
+    const chapters = groupChapters(lines, (l) => chapterOf[l.id])
+    expect(chapters.map((c) => [c.name, c.lines.map((l) => l.id)])).toEqual([
+      ['Advance Variation', ['a1', 'a2']],
+      ['Exchange Variation', ['x1', 'x2']],
+      [OTHER_LINES, ['o1']],
+    ])
+    expect(chapters[0].frequency).toBeCloseTo(0.4)
   })
 })
