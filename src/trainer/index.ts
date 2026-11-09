@@ -88,3 +88,23 @@ export {
   type LearnTurn,
   type NextLine,
 } from './learn'
+export {
+  conceptTags,
+  lineNarration,
+  narrateMove,
+  numberedSan,
+  type NarrationInput,
+} from './narration'
+export { SHOW_ARROW_MS, SHOW_MOVE_MS, useLearn, type LearnOptions } from './useLearn'
+export { LearnView, type LearnViewProps } from './LearnView'
+export {
+  courseCounts,
+  dueCount,
+  linesWithStatus,
+  loadCourse,
+  loadLibrary,
+  type CourseCounts,
+  type CourseDetail,
+  type LibraryItem,
+  type LineWithStatus,
+} from './courseData'
