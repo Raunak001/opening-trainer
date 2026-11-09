@@ -1,0 +1,52 @@
+{
+  "id": "castle-early",
+  "name": "Castle early",
+  "description": "Get the king safe and connect the rooks.",
+  "lessons": [
+    {
+      "id": "early-01",
+      "concept": "castle-early",
+      "fen": "r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 2 5",
+      "prompt": "Your e4 pawn is attacked, but you do not need to defend it yet. Get your king safe.",
+      "accepted": ["O-O"],
+      "hints": ["If ...Nxe4, a rook on e1 wins the pawn back.", "Castle kingside."],
+      "explanation": "5.O-O is the main line. If 5...Nxe4, 6.Re1 (or 6.d4) wins the pawn back with a lead in development, because the e-file opens toward Black’s king."
+    },
+    {
+      "id": "early-02",
+      "concept": "castle-early",
+      "fen": "r1bqk2r/2p1bppp/p1np1n2/1p2p3/4P3/1BP2N2/PP1P1PPP/RNBQR1K1 b kq - 0 8",
+      "prompt": "Your pieces are out. Finish development the right way.",
+      "accepted": ["O-O"],
+      "hints": ["Your king is still in the center.", "Castling connects the rooks."],
+      "explanation": "8...O-O completes Black’s development: the king is safe and the f8 rook can join the game. This is the main line of the Closed Ruy Lopez."
+    },
+    {
+      "id": "early-03",
+      "concept": "castle-early",
+      "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 1 5",
+      "prompt": "A quiet Italian. Before anything else, tuck your king away.",
+      "accepted": ["O-O"],
+      "hints": ["Your kingside pieces are developed.", "Nothing is attacked: castle."],
+      "explanation": "5.O-O (5.c3 is equally good) is standard. With the king castled, White can later play c3, Re1 and d4 without worrying about checks on the e-file."
+    },
+    {
+      "id": "early-04",
+      "concept": "castle-early",
+      "fen": "rnbqk2r/ppp1bppp/4pn2/3p2B1/2PP4/2N1P3/PP3PPP/R2QKBNR b KQkq - 0 5",
+      "prompt": "Queen’s Gambit Declined. Your kingside is ready.",
+      "accepted": ["O-O"],
+      "hints": ["The e7 bishop has broken the pin.", "Castle before choosing a plan."],
+      "explanation": "5...O-O is the main line: the king goes to safety first, then Black picks a plan with ...Nbd7, ...c6 or ...b6."
+    },
+    {
+      "id": "early-05",
+      "concept": "castle-early",
+      "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 b kq - 2 5",
+      "prompt": "White has castled. Match it.",
+      "accepted": ["O-O"],
+      "hints": ["Your king and rook are ready.", "Short castling."],
+      "explanation": "5...O-O mirrors White and keeps the king out of trouble. 5...d6 is equally good; both lead to the slow Giuoco Pianissimo."
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "id": "punish-the-early-queen",
+  "name": "Punish the early queen",
+  "description": "Develop with tempo against a queen that came out too soon.",
+  "lessons": [
+    {
+      "id": "queen-01",
+      "concept": "punish-early-queen",
+      "fen": "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3",
+      "prompt": "White threatens mate. Stop it and hit the queen at the same time.",
+      "accepted": ["g6"],
+      "hints": [
+        "What does Qxf7 do?",
+        "A pawn move that blocks the queen’s path to f7 and attacks it."
+      ],
+      "explanation": "3...g6 stops Qxf7# and attacks the queen. After 4.Qf3 Nf6 Black develops with gain of time. Careful: 3...Nf6?? loses to 4.Qxf7#."
+    },
+    {
+      "id": "queen-02",
+      "concept": "punish-early-queen",
+      "fen": "rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3",
+      "prompt": "The queen is in the middle of the board. Develop and attack it.",
+      "accepted": ["Nc3"],
+      "hints": ["Which piece can develop with a threat?", "The b1 knight."],
+      "explanation": "3.Nc3 develops with tempo: the queen must move again and White gains time. That is the basic problem of the Scandinavian."
+    },
+    {
+      "id": "queen-03",
+      "concept": "punish-early-queen",
+      "fen": "rnbqkbnr/pppp1ppp/8/8/3QP3/8/PPP2PPP/RNB1KBNR b KQkq - 0 3",
+      "prompt": "White’s queen recaptured on move 3. Make it pay.",
+      "accepted": ["Nc6"],
+      "hints": ["Which piece develops with a threat?", "The b8 knight hits d4."],
+      "explanation": "3...Nc6 develops and attacks the queen, so White spends another move on it. That is why the Center Game is rare."
+    },
+    {
+      "id": "queen-04",
+      "concept": "punish-early-queen",
+      "fen": "rnbqkbnr/ppp2ppp/3p4/8/3QP3/5N2/PPP2PPP/RNB1KB1R b KQkq - 0 4",
+      "prompt": "Same story in the Philidor. Develop with tempo.",
+      "accepted": ["Nc6"],
+      "hints": ["The queen on d4 can be attacked.", "A knight move."],
+      "explanation": "4...Nc6 develops and hits the queen. That is why White usually recaptures with the knight (4.Nxd4) instead."
+    },
+    {
+      "id": "queen-05",
+      "concept": "punish-early-queen",
+      "fen": "rnbqkbnr/pp2pppp/3p4/8/3QP3/5N2/PPP2PPP/RNB1KB1R b KQkq - 0 4",
+      "prompt": "White took back with the queen. Gain a tempo.",
+      "accepted": ["Nc6"],
+      "hints": ["Which knight can attack d4?", "From b8."],
+      "explanation": "4...Nc6 gains time on the queen. 4.Qxd4 is playable for White (5.Bb5 pins the knight), but Black develops comfortably."
+    }
+  ]
+}

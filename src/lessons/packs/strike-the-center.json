@@ -1,0 +1,55 @@
+{
+  "id": "strike-the-center",
+  "name": "Strike the center",
+  "description": "Hit the opponent’s central pawns with your own pawns.",
+  "lessons": [
+    {
+      "id": "center-01",
+      "concept": "strike-center",
+      "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+      "prompt": "Black’s e5 pawn holds the center. Strike it with a pawn.",
+      "accepted": ["d4"],
+      "hints": ["Which pawn can attack e5 right now?", "The knight on f3 already supports d4."],
+      "explanation": "3.d4 (the Scotch) hits e5 at once. After 3...exd4 4.Nxd4 White has open lines and easy development."
+    },
+    {
+      "id": "center-02",
+      "concept": "strike-center",
+      "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R w KQkq - 1 5",
+      "prompt": "You played c3 for a reason. Use it.",
+      "accepted": ["d4"],
+      "hints": ["c3 supports a pawn on d4.", "Push the d-pawn two squares."],
+      "explanation": "5.d4 is the point of c3: it attacks e5 and the c5 bishop, aiming for a big pawn center. Stockfish rates the quiet 5.d3 about the same, but d4 is the principled strike."
+    },
+    {
+      "id": "center-03",
+      "concept": "strike-center",
+      "fen": "rnbqkbnr/pppp1ppp/4p3/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2",
+      "prompt": "White has two pawns in the center. Challenge them.",
+      "accepted": ["d5"],
+      "hints": ["e6 was played to support a pawn move.", "Hit e4 with the d-pawn."],
+      "explanation": "2...d5 is the whole idea of the French: e6 supports d5, which attacks e4 straight away. Without it White keeps a big center for free."
+    },
+    {
+      "id": "center-04",
+      "concept": "strike-center",
+      "fen": "rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq - 0 2",
+      "prompt": "Same idea, different support. Strike the center.",
+      "accepted": ["d5"],
+      "hints": ["c6 prepared a pawn move.", "d5, backed by c6, attacks e4."],
+      "explanation": "2...d5 is why Black played c6: the pawn on d5 is supported and attacks e4, and the c8 bishop stays free."
+    },
+    {
+      "id": "center-05",
+      "concept": "strike-center",
+      "fen": "rnbqkbnr/pp2pppp/3p4/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3",
+      "prompt": "Open the position: strike in the center.",
+      "accepted": ["d4"],
+      "hints": [
+        "Black’s c5 pawn watches d4. Challenge it anyway.",
+        "d4 offers your d-pawn for Black’s c-pawn."
+      ],
+      "explanation": "3.d4 (the Open Sicilian) trades White’s d-pawn for Black’s c-pawn. After 3...cxd4 4.Nxd4 White leads in development and has open lines for the pieces."
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "id": "develop-before-attacking",
+  "name": "Develop before attacking",
+  "description": "Bring out the minor pieces before the queen goes hunting.",
+  "lessons": [
+    {
+      "id": "attacking-01",
+      "concept": "develop-before-attacking",
+      "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3",
+      "prompt": "Qh5 and Qf3 look aggressive. What does the position really need?",
+      "accepted": ["Nf3", "Nc3"],
+      "hints": ["Your g1 knight has not moved.", "A knight move that also attacks e5."],
+      "explanation": "3.Nf3 develops and hits e5 (3.Nc3 is fine too). Early queen raids like Qh5 or Qf3 are met by ...g6 or ...Nf6, and the queen gets chased while Black develops."
+    },
+    {
+      "id": "attacking-02",
+      "concept": "develop-before-attacking",
+      "fen": "rnbqk1nr/pppp1ppp/8/2b1p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3",
+      "prompt": "Both bishops eye f7 and f2. Before any attack, bring out another piece.",
+      "accepted": ["Nf3", "Nc3"],
+      "hints": ["Knights before the queen.", "Nf3 develops with a threat on e5."],
+      "explanation": "3.Nf3 develops and attacks e5 (3.Nc3 is fine too). 3.Qh5 is met by 3...Qe7, and the queen has achieved nothing."
+    },
+    {
+      "id": "attacking-03",
+      "concept": "develop-before-attacking",
+      "fen": "rnbqk1nr/pppp1ppp/8/2b1p3/2B1P3/3P4/PPP2PPP/RNBQK1NR b KQkq - 0 3",
+      "prompt": "Qf6 or Qh4 would hit f2. Is that the plan?",
+      "accepted": ["Nf6", "Nc6"],
+      "hints": ["Count your developed pieces.", "Put a knight on its best square."],
+      "explanation": "3...Nf6 (or 3...Nc6) develops a piece and creates no weaknesses. An early queen move like 3...Qf6 takes the knight’s best square and becomes a target for Nf3, Nc3 and Bg5."
+    },
+    {
+      "id": "attacking-04",
+      "concept": "develop-before-attacking",
+      "fen": "r1bqkbnr/pp1ppppp/2n5/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3",
+      "prompt": "The bishop pins your knight. Qb6 or Qc7 would guard it. Find a developing move instead.",
+      "accepted": ["g6", "Nf6"],
+      "hints": [
+        "Think about where your king will go.",
+        "...g6 prepares Bg7; ...Nf6 develops at once."
+      ],
+      "explanation": "3...g6 (the main line) prepares Bg7 and castling; 3...Nf6 is also fine. A queen move to b6 or c7 develops nothing and gives White targets."
+    },
+    {
+      "id": "attacking-05",
+      "concept": "develop-before-attacking",
+      "fen": "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/2P2N2/PP1P1PPP/RNBQK2R b KQkq - 0 4",
+      "prompt": "White is preparing d4. Answer with development, not a queen move.",
+      "accepted": ["Nf6"],
+      "hints": [
+        "Which minor piece is still at home and has a good square?",
+        "The g8 knight, attacking e4."
+      ],
+      "explanation": "4...Nf6 develops and hits e4, so White must deal with it before d4. A queen move such as 4...Qe7 defends e5 but leaves the kingside pieces at home."
+    }
+  ]
+}
