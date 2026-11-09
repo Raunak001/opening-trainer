@@ -87,6 +87,12 @@ export interface RepertoireRow {
    * when pruning would drop them (T5.5). Optional, not indexed.
    */
   extraMoves?: Record<string, string[]>
+  /**
+   * Set when the repertoire is a library course (T7.3): the catalog entry id
+   * and depth tier it was built from. Optional, not indexed.
+   */
+  courseId?: string
+  tier?: 'essentials' | 'advanced' | 'full'
   /** Position key of the tree root (the initial position). */
   rootKey: string
   /** Number of rows in `nodes` for this repertoire, for lists without loading the tree. */

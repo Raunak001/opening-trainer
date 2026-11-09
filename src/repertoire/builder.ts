@@ -222,6 +222,9 @@ export async function saveRepertoire(db: TrainerDB, input: SaveRepertoireInput):
     await db.nodes.bulkPut(nodes)
     await db.repertoires.put({
       ...definition,
+      // A rebuild from the Build page does not know about courses: stay one.
+      courseId: definition.courseId ?? existing?.courseId,
+      tier: definition.tier ?? existing?.tier,
       id,
       rootKey: tree.rootKey,
       positionCount: nodes.length,
@@ -258,13 +261,19 @@ export function listRepertoires(db: TrainerDB): Promise<RepertoireRow[]> {
 /** Builds with `options` and saves the result; returns the saved repertoire. */
 export async function buildAndSave(
   db: TrainerDB,
-  options: BuildOptions & { name: string; id?: string },
+  options: BuildOptions & {
+    name: string
+    id?: string
+    courseId?: RepertoireRow['courseId']
+    tier?: RepertoireRow['tier']
+  },
 ): Promise<Repertoire> {
   const settings = options.settings ?? DEFAULT_PRUNE_SETTINGS
   const { tree } = await buildRepertoire({ ...options, settings })
   const id = await saveRepertoire(db, {
     id: options.id,
     name: options.name,
+    ...(options.courseId !== undefined && { courseId: options.courseId, tier: options.tier }),
     color: options.color,
     startMoves: [...(options.startMoves ?? [])],
     speeds: [...options.speeds],

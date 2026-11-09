@@ -117,3 +117,16 @@ export {
 export { shortestParent } from './tree'
 export { TreeViewer, type TreeViewerProps } from './TreeViewer'
 export { CATALOG, catalogEntry, firstMove, type CatalogEntry, type OpeningFamily } from './catalog'
+export {
+  buildCourse,
+  courseRepertoireId,
+  findCourse,
+  listCourses,
+  TIER_ORDER,
+  tierSettings,
+  TIERS,
+  type BuildCourseOptions,
+  type CourseBuild,
+  type CourseTier,
+  type TierPreset,
+} from './courses'

@@ -1,3 +1,4 @@
+import type { RatingBucket, Speed } from '../repertoire/explorer'
 import type { TimeClass, TrainerDB } from './db'
 
 /**
@@ -69,6 +70,12 @@ export interface AppSettings {
     /** Stockfish depth for checking mined positions (many evals: keep it shallow). */
     mineDepth: number
   }
+  /** Library courses (Phase 7): which explorer games courses are built from. */
+  courses: {
+    /** Explorer rating buckets (lower bounds) of the opponents to prepare for. */
+    ratings: RatingBucket[]
+    speeds: Speed[]
+  }
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -87,6 +94,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     minGapGames: 2,
   },
   lessons: { depth: 18, multiPv: 5, acceptWithinCp: 30, mineDepth: 12 },
+  // Same band as the builder's defaults.
+  courses: { ratings: [1600, 1800], speeds: ['blitz', 'rapid'] },
 }
 
 export type SettingsPatch = { [K in keyof AppSettings]?: Partial<AppSettings[K]> }
@@ -104,6 +113,7 @@ export function mergeSettings(base: AppSettings, patch: SettingsPatch | undefine
     playout: { ...base.playout, ...patch?.playout },
     importer: { ...base.importer, ...patch?.importer },
     lessons: { ...base.lessons, ...patch?.lessons },
+    courses: { ...base.courses, ...patch?.courses },
   }
 }
 
