@@ -25,6 +25,7 @@ export function stubEngine(table: Record<string, StubEval>) {
       }
     },
     cancel: () => {},
+    setOption: async () => {},
     dispose: () => {},
   }
   return { engine, searched }

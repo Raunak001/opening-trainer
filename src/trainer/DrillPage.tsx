@@ -1,26 +1,54 @@
+import { Chess } from 'chess.js'
 import { useMemo, useState } from 'react'
 import { Board } from '../board'
 import { getDb } from '../db'
 import type { Line } from './drill'
 import { createMoveExplainer } from './explainer'
+import { PlayoutView } from './PlayoutView'
 import { SAMPLE_LINES } from './sampleLines'
 import { SidePanel } from './SidePanel'
 import { TrainerLayout } from './TrainerLayout'
 import { useDrill } from './useDrill'
 
 function Drill({ line }: { line: Line }) {
-  const explain = useMemo(() => createMoveExplainer(getDb()), [])
-  const { board, panel, restart } = useDrill(line, { explain })
+  const db = getDb()
+  const explain = useMemo(() => createMoveExplainer(db), [db])
+  const { drill, board, panel, restart } = useDrill(line, { explain })
+  const [playingOut, setPlayingOut] = useState(false)
+  const complete = drill.status === 'complete'
+  const gameOver = complete && new Chess(drill.fen).isGameOver()
+
+  const again = () => {
+    setPlayingOut(false)
+    restart()
+  }
+
   return (
     <>
-      <TrainerLayout>
-        <Board {...board} />
-        <SidePanel {...panel} />
-      </TrainerLayout>
+      {playingOut ? (
+        <PlayoutView
+          db={db}
+          fen={drill.fen}
+          userSide={line.side}
+          lineStartFen={line.startFen ?? new Chess().fen()}
+          lineMoves={drill.steps.map((s) => s.san)}
+          explain={explain}
+        />
+      ) : (
+        <TrainerLayout>
+          <Board {...board} />
+          <SidePanel {...panel} />
+        </TrainerLayout>
+      )}
       <div className="drill-controls">
-        <button type="button" onClick={restart}>
+        <button type="button" onClick={again}>
           Restart
         </button>
+        {complete && !gameOver && !playingOut && (
+          <button type="button" onClick={() => setPlayingOut(true)}>
+            Play on vs Stockfish
+          </button>
+        )}
       </div>
     </>
   )

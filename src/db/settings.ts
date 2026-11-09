@@ -36,6 +36,15 @@ export interface AppSettings {
     /** Repertoire sanity check: flag chosen moves losing more than this many centipawns. */
     sanityCpLoss: number
   }
+  /** Playing on against a weakened Stockfish after a drilled line ends. */
+  playout: {
+    /** Moves the user plays before the play-out ends. */
+    userMoves: number
+    /** Stockfish `Skill Level`, 0 (weakest) to 20 (full strength). */
+    skillLevel: number
+    /** Search depth for the opponent's moves. */
+    depth: number
+  }
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -45,6 +54,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   progress: { masteredAfterDays: 21 },
   // Lichess's judgement thresholds (0.1 / 0.2 / 0.3 winning chances) on the win% scale.
   moveGrading: { depth: 16, inaccuracy: 5, mistake: 10, blunder: 15, sanityCpLoss: 50 },
+  playout: { userMoves: 10, skillLevel: 3, depth: 8 },
 }
 
 export type SettingsPatch = { [K in keyof AppSettings]?: Partial<AppSettings[K]> }
@@ -59,6 +69,7 @@ export function mergeSettings(base: AppSettings, patch: SettingsPatch | undefine
     daily: { ...base.daily, ...patch?.daily },
     progress: { ...base.progress, ...patch?.progress },
     moveGrading: { ...base.moveGrading, ...patch?.moveGrading },
+    playout: { ...base.playout, ...patch?.playout },
   }
 }
 

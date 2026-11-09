@@ -35,3 +35,24 @@ export {
 export { cardLine, formatInterval, gradeFeedback, ratingName } from './review'
 export { NEXT_CARD_DELAY_MS, ReviewPage, type ReviewPageProps } from './ReviewPage'
 export { LINES_SHOWN, ProgressPage, type ProgressPageProps } from './ProgressPage'
+export {
+  createMoveExplainer,
+  drillFeedback,
+  type ExplainRequest,
+  type MoveExplainer,
+} from './explainer'
+export {
+  createPlayout,
+  gradeCounts,
+  playEngineMove,
+  playoutSummary,
+  playUserMove,
+  setGrade,
+  userMovesPlayed,
+  type PlayoutEnd,
+  type PlayoutMove,
+  type PlayoutState,
+  type PlayoutStatus,
+} from './playout'
+export { usePlayout, playoutFeedback, type PlayoutOptions } from './usePlayout'
+export { PlayoutView, type PlayoutViewProps } from './PlayoutView'

@@ -43,6 +43,11 @@ export interface Engine {
   search(fen: string, options: SearchOptions, callbacks?: SearchCallbacks): Promise<SearchResult>
   /** Cancels the running search and any queued ones. */
   cancel(): void
+  /**
+   * Sends `setoption name <name> value <value>` once the engine is idle (after any running
+   * search) and waits for `readyok`. Searches started afterwards use the new value.
+   */
+  setOption(name: string, value: string | number): Promise<void>
   /** Stops the engine and rejects anything pending. The engine is unusable afterwards. */
   dispose(): void
 }
@@ -255,6 +260,22 @@ export function createEngine(transport: UciTransport): Engine {
     }
   }
 
+  async function setOption(name: string, value: string | number): Promise<void> {
+    assertUsable()
+    await ready()
+    const previous = idle
+    let markIdle!: () => void
+    idle = new Promise<void>((resolve) => (markIdle = resolve))
+    try {
+      await previous
+      assertUsable()
+      transport.send(`setoption name ${name} value ${value}`)
+      await expect('readyok', 'isready')
+    } finally {
+      markIdle()
+    }
+  }
+
   function dispose() {
     if (disposed) return
     cancel()
@@ -264,5 +285,5 @@ export function createEngine(transport: UciTransport): Engine {
     transport.terminate()
   }
 
-  return { ready, search, cancel, dispose }
+  return { ready, search, cancel, setOption, dispose }
 }

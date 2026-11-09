@@ -222,4 +222,19 @@ describe('createEngine', () => {
     expect(fake.terminated).toBe(true)
     await expect(engine.search(START_FEN, { depth: 5 })).rejects.toThrow('disposed')
   })
+
+  it('sets options between searches and waits for readyok', async () => {
+    const fake = fakeTransport()
+    const engine = createEngine(fake.transport)
+    const search = engine.search(START_FEN, { depth: 20 })
+    await flush()
+    const option = engine.setOption('Skill Level', 3)
+    await flush()
+    // Not sent while the search runs.
+    expect(fake.sent).not.toContain('setoption name Skill Level value 3')
+    fake.finish('bestmove e2e4')
+    await search
+    await option
+    expect(fake.sent.slice(-2)).toEqual(['setoption name Skill Level value 3', 'isready'])
+  })
 })

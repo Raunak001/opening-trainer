@@ -11,3 +11,14 @@ export function getSharedEngine(): Engine {
   shared = createEngine(createWorkerTransport())
   return shared
 }
+
+/**
+ * A separate, weakened Stockfish worker for playing against (UCI `Skill Level`, 0–20). The
+ * shared engine stays at full strength for grading. The caller disposes it.
+ */
+export async function createOpponentEngine(skillLevel: number): Promise<Engine> {
+  if (typeof Worker === 'undefined') throw new EngineError('Web Workers are not available')
+  const engine = createEngine(createWorkerTransport())
+  await engine.setOption('Skill Level', skillLevel)
+  return engine
+}
