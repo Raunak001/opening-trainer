@@ -130,3 +130,12 @@ export {
   type CourseTier,
   type TierPreset,
 } from './courses'
+export {
+  cardsByPosition,
+  enumerateLines,
+  lineCards,
+  lineName,
+  lineStatus,
+  type CourseLine,
+  type LineStatus,
+} from './lines'
