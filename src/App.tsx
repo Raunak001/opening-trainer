@@ -4,11 +4,13 @@ import { BackupPage } from './db/BackupPage'
 import { ImportPage } from './importer'
 import { LessonsPage } from './lessons'
 import { BuilderPage, TreeViewer } from './repertoire'
-import { DrillPage, ProgressPage, ReviewPage } from './trainer'
+import { CoursePage, DrillPage, LibraryPage, ProgressPage, ReviewPage } from './trainer'
 
-type View = 'review' | 'progress' | 'drill' | 'lessons' | 'build' | 'tree' | 'import' | 'backup'
+type View =
+  'library' | 'review' | 'progress' | 'drill' | 'lessons' | 'build' | 'tree' | 'import' | 'backup'
 
 const VIEWS: { id: View; label: string }[] = [
+  { id: 'library', label: 'Library' },
   { id: 'drill', label: 'Drill' },
   { id: 'review', label: 'Review' },
   { id: 'progress', label: 'Progress' },
@@ -20,7 +22,9 @@ const VIEWS: { id: View; label: string }[] = [
 ]
 
 function App() {
-  const [view, setView] = useState<View>('drill')
+  const [view, setView] = useState<View>('library')
+  // The open course, when the library shows one.
+  const [course, setCourse] = useState<string>()
 
   return (
     <>
@@ -30,12 +34,21 @@ function App() {
             key={v.id}
             type="button"
             aria-current={view === v.id ? 'page' : undefined}
-            onClick={() => setView(v.id)}
+            onClick={() => {
+              setView(v.id)
+              setCourse(undefined)
+            }}
           >
             {v.label}
           </button>
         ))}
       </nav>
+      {view === 'library' &&
+        (course ? (
+          <CoursePage key={course} entryId={course} onBack={() => setCourse(undefined)} />
+        ) : (
+          <LibraryPage onOpen={setCourse} />
+        ))}
       {view === 'review' && <ReviewPage />}
       {view === 'progress' && <ProgressPage onStartReview={() => setView('review')} />}
       {view === 'drill' && <DrillPage />}

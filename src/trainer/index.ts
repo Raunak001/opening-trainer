@@ -108,3 +108,5 @@ export {
   type LibraryItem,
   type LineWithStatus,
 } from './courseData'
+export { LibraryPage, type LibraryPageProps } from './LibraryPage'
+export { CoursePage, type CoursePageProps } from './CoursePage'

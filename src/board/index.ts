@@ -9,4 +9,5 @@ export {
   turnColor,
   type PromotionPiece,
 } from './dests'
+export { MiniBoard, type MiniBoardProps } from './MiniBoard'
 export { PromotionPicker } from './PromotionPicker'

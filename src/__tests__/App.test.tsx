@@ -4,16 +4,18 @@ import { describe, expect, it } from 'vitest'
 import App from '../App'
 
 describe('App', () => {
-  it('renders the drill page', () => {
+  it('opens on the library', async () => {
     render(<App />)
-    expect(screen.getByText(/drill the Italian Game\. You play White/)).toBeInTheDocument()
-    expect(screen.getByText('Challenge 1/8')).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'Promotion (Black)' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Opening library' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Library' })).toHaveAttribute('aria-current', 'page')
+    fireEvent.click(await screen.findByRole('button', { name: 'Caro-Kann Defense, Black' }))
+    expect(await screen.findByRole('heading', { name: 'Caro-Kann Defense' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '‹ Library' }))
+    expect(screen.getByRole('heading', { name: 'Opening library' })).toBeInTheDocument()
   })
 
   it('switches between the views', async () => {
     render(<App />)
-    expect(screen.getByRole('button', { name: 'Drill' })).toHaveAttribute('aria-current', 'page')
 
     fireEvent.click(screen.getByRole('button', { name: 'Build' }))
     expect(screen.getByRole('heading', { name: 'New repertoire' })).toBeInTheDocument()
