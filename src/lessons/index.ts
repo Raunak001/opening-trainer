@@ -47,3 +47,31 @@ export {
   type LessonForm,
 } from './authoring'
 export { AuthorPage, type AuthorPageProps } from './AuthorPage'
+export {
+  DEFAULT_DETECT_OPTIONS,
+  detectConcepts,
+  developingMoves,
+  occupiesCenter,
+  prematureAttack,
+  type ConceptHit,
+  type DetectOptions,
+} from './concepts'
+export {
+  DEFAULT_MINE_EXPLORER,
+  mineExplorer,
+  mineGames,
+  type MinedCandidate,
+  type MineExplorerOptions,
+  type MineGamesOptions,
+  type MineSource,
+} from './mining'
+export { MAX_CHECKS_PER_CONCEPT, MinePage, SHOWN_PER_CONCEPT, type MinePageProps } from './MinePage'
+export {
+  verifyCandidate,
+  verifyCandidates,
+  type MoveCheck,
+  type Verdict,
+  type VerifiedCandidate,
+  type VerifyManyOptions,
+  type VerifyOptions,
+} from './verify'

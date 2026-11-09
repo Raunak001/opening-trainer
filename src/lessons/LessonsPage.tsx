@@ -3,6 +3,8 @@ import type { DrillOutcome } from '../trainer/useDrill'
 import { AuthorPage, type AuthorPageProps } from './AuthorPage'
 import { conceptLabel, type Lesson, type LessonPack } from './lesson'
 import { LessonPlayer } from './LessonPlayer'
+import { MinePage, type MinePageProps } from './MinePage'
+import type { MinedCandidate } from './mining'
 import { bundledPacks, type LoadedPacks } from './packs'
 import './lessons.css'
 
@@ -11,14 +13,17 @@ export interface LessonsPageProps {
   packs?: LoadedPacks
   onSolved?: (pack: LessonPack, lesson: Lesson, outcome: DrillOutcome) => void
   /** Passed to the authoring tool (tests inject an engine). */
-  author?: Omit<AuthorPageProps, 'packs'>
+  author?: Omit<AuthorPageProps, 'packs' | 'pack' | 'onPackChange' | 'load'>
+  /** Passed to the miner (tests inject a database and explorer client). */
+  mine?: Omit<MinePageProps, 'onOpen'>
 }
 
-type Tab = 'play' | 'author'
+type Tab = 'play' | 'author' | 'mine'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'play', label: 'Play' },
   { id: 'author', label: 'Author' },
+  { id: 'mine', label: 'Mine' },
 ]
 
 function concepts(pack: LessonPack): string {
@@ -26,9 +31,17 @@ function concepts(pack: LessonPack): string {
 }
 
 /** Play lesson packs, or author new ones. */
-export function LessonsPage({ packs: packsProp, onSolved, author }: LessonsPageProps) {
+export function LessonsPage({ packs: packsProp, onSolved, author, mine }: LessonsPageProps) {
   const loaded = packsProp ?? bundledPacks()
   const [tab, setTab] = useState<Tab>('play')
+  // Kept here so the pack being authored survives a trip to the miner.
+  const [draft, setDraft] = useState<LessonPack>({ id: '', name: '', lessons: [] })
+  const [load, setLoad] = useState<{ fen: string; concept: string; nonce: number }>()
+
+  const open = (candidate: MinedCandidate) => {
+    setLoad((l) => ({ fen: candidate.fen, concept: candidate.concept, nonce: (l?.nonce ?? 0) + 1 }))
+    setTab('author')
+  }
 
   return (
     <>
@@ -40,7 +53,16 @@ export function LessonsPage({ packs: packsProp, onSolved, author }: LessonsPageP
         ))}
       </nav>
       {tab === 'play' && <PackPicker loaded={loaded} onSolved={onSolved} />}
-      {tab === 'author' && <AuthorPage {...author} packs={loaded.packs} />}
+      {tab === 'author' && (
+        <AuthorPage
+          {...author}
+          packs={loaded.packs}
+          pack={draft}
+          onPackChange={setDraft}
+          load={load}
+        />
+      )}
+      {tab === 'mine' && <MinePage {...mine} onOpen={open} />}
     </>
   )
 }

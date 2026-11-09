@@ -66,6 +66,8 @@ export interface AppSettings {
     multiPv: number
     /** Moves within this many centipawns of the best are accepted automatically. */
     acceptWithinCp: number
+    /** Stockfish depth for checking mined positions (many evals: keep it shallow). */
+    mineDepth: number
   }
 }
 
@@ -84,7 +86,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     cardMinGrade: 'mistake',
     minGapGames: 2,
   },
-  lessons: { depth: 18, multiPv: 5, acceptWithinCp: 30 },
+  lessons: { depth: 18, multiPv: 5, acceptWithinCp: 30, mineDepth: 12 },
 }
 
 export type SettingsPatch = { [K in keyof AppSettings]?: Partial<AppSettings[K]> }

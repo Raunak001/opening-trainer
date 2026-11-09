@@ -256,3 +256,47 @@
     width: 100%;
   }
 }
+
+/* Miner. */
+.mine__fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid #3c3a37;
+  border-radius: 6px;
+}
+
+.mine__fieldset legend {
+  padding: 0 4px;
+  color: #bababa;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lessons__panel label.mine__check {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+  font-weight: 400;
+}
+
+.mine__results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mine__results li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #3c3a37;
+}

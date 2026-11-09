@@ -30,10 +30,18 @@ export interface AuthorPageProps {
   engine?: () => Engine
   /** Packs offered for editing; defaults to the bundled ones. */
   packs?: LessonPack[]
-  /** Position to start from, e.g. a mined candidate. */
+  /** Position to start from. */
   initialFen?: string
-  /** Concept to start with, e.g. a mined candidate's. */
+  /** Concept to start with. */
   initialConcept?: string
+  /**
+   * The pack being edited, when the caller keeps it (so it survives leaving the page).
+   * Without it the page keeps its own.
+   */
+  pack?: LessonPack
+  onPackChange?: (pack: LessonPack) => void
+  /** Load a position (e.g. a mined candidate): applied whenever `nonce` changes. */
+  load?: { fen: string; concept: string; nonce: number }
   /** Saves the exported file; defaults to a download. */
   saveFile?: (name: string, text: string) => void
 }
@@ -48,6 +56,8 @@ function downloadFile(name: string, text: string) {
   link.click()
   setTimeout(() => URL.revokeObjectURL(url), 0)
 }
+
+const LOADED_NOTICE = 'Loaded a mined position: analyse it before writing the lesson.'
 
 const EMPTY_PACK: LessonPack = { id: '', name: '', lessons: [] }
 
@@ -78,23 +88,45 @@ export function AuthorPage({
   db: dbProp,
   engine: engineProp,
   packs: packsProp,
-  initialFen = START_FEN,
-  initialConcept = 'strike-center',
+  initialFen,
+  initialConcept,
+  pack: packProp,
+  onPackChange,
+  load,
   saveFile = downloadFile,
 }: AuthorPageProps) {
   const db = dbProp ?? getDb()
   const packs = packsProp ?? bundledPacks().packs
   const [settings, setSettings] = useState<AppSettings['lessons']>(DEFAULT_SETTINGS.lessons)
   const [history, setHistory] = useState<string[]>([])
-  const [pack, setPack] = useState<LessonPack>(EMPTY_PACK)
-  const [form, setForm] = useState<LessonForm>(() =>
-    emptyForm(new Chess(initialFen).fen(), initialConcept, EMPTY_PACK),
+  const [ownPack, setOwnPack] = useState<LessonPack>(EMPTY_PACK)
+  const pack = packProp ?? ownPack
+  const packRef = useRef(pack)
+  useEffect(() => {
+    packRef.current = pack
+  }, [pack])
+  const setPack = useCallback(
+    (next: LessonPack | ((p: LessonPack) => LessonPack)) => {
+      const value = typeof next === 'function' ? next(packRef.current) : next
+      packRef.current = value
+      if (onPackChange) onPackChange(value)
+      else setOwnPack(value)
+    },
+    [onPackChange],
   )
+  const [form, setForm] = useState<LessonForm>(() =>
+    emptyForm(
+      new Chess(load?.fen ?? initialFen ?? START_FEN).fen(),
+      load?.concept ?? initialConcept ?? 'strike-center',
+      pack,
+    ),
+  )
+  const loaded = useRef(load?.nonce)
   const [fenInput, setFenInput] = useState(form.fen)
   const [extraMove, setExtraMove] = useState('')
   const [analysis, setAnalysis] = useState<Analysis>()
   const [errors, setErrors] = useState<string[]>([])
-  const [notice, setNotice] = useState<string>()
+  const [notice, setNotice] = useState<string | undefined>(() => load && LOADED_NOTICE)
   const [json, setJson] = useState<string>()
   const abort = useRef<AbortController>(undefined)
   const fen = form.fen
@@ -127,6 +159,19 @@ export function AuthorPage({
     },
     [fen],
   )
+
+  // A position handed over from mining.
+  useEffect(() => {
+    if (!load || load.nonce === loaded.current) return
+    loaded.current = load.nonce
+    goTo(new Chess(load.fen).fen(), true)
+    setForm((f) => ({
+      ...f,
+      concept: load.concept,
+      id: nextLessonId(packRef.current, load.concept),
+    }))
+    setNotice(LOADED_NOTICE)
+  }, [load, goTo])
 
   const onMove = useCallback(
     (from: Key, to: Key, promotion?: PromotionPiece) => {
