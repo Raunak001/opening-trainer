@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import {
   getDb,
   getSettings,
@@ -8,7 +8,9 @@ import {
   type TimeClass,
   type TrainerDB,
 } from '../db'
+import { listRepertoires, loadRepertoire, type Repertoire } from '../repertoire/builder'
 import { getChesscomClient, type ChesscomClient } from './chesscom'
+import { describeDeviation, matchGame, type GameMatch } from './deviation'
 import { filterGames, TIME_CLASSES } from './games'
 import { syncGames, type SyncProgress } from './sync'
 import './import.css'
@@ -63,6 +65,24 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
       setStatus({ kind: 'error', message: String(err) }),
     )
   }
+
+  // Live, so a rebuilt tree re-checks every game.
+  const repertoires = useLiveQuery(async () => {
+    const reps: Repertoire[] = []
+    for (const row of await listRepertoires(db)) {
+      const rep = await loadRepertoire(db, row.id)
+      if (rep) reps.push(rep)
+    }
+    return reps
+  }, [db])
+
+  const matches = useMemo(() => {
+    const out = new Map<string, GameMatch | undefined>()
+    if (!repertoires) return out
+    for (const g of games ?? []) out.set(g.id, matchGame(g.sans, g.color, repertoires))
+    return out
+  }, [games, repertoires])
+  const repName = (id: string) => repertoires?.find((r) => r.id === id)?.name ?? ''
 
   async function onSync(e: FormEvent) {
     e.preventDefault()
@@ -179,11 +199,33 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
                     {g.timeClass} · {RESULT_LABEL[g.result]}
                   </span>
                 </span>
+                <DeviationCell match={matches.get(g.id)} sans={g.sans} repName={repName} />
               </li>
             ))}
           </ol>
         </section>
       )}
     </main>
+  )
+}
+
+function DeviationCell({
+  match,
+  sans,
+  repName,
+}: {
+  match: GameMatch | undefined
+  sans: readonly string[]
+  repName: (id: string) => string
+}) {
+  if (!match) return <span className="import__muted">No repertoire for this color</span>
+  const d = match.deviation
+  return (
+    <span className={`import__dev import__dev--${d.kind}`} data-ply={d.ply}>
+      {describeDeviation(d, sans)}
+      {d.kind !== 'outside' && (
+        <span className="import__muted"> · {repName(match.repertoireId)}</span>
+      )}
+    </span>
   )
 }

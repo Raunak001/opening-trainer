@@ -3,6 +3,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import Dexie from 'dexie'
 import { afterEach, describe, expect, it } from 'vitest'
 import { getSettings, TrainerDB } from '../../db'
+import { buildAndSave } from '../../repertoire/builder'
+import { DEFAULT_PRUNE_SETTINGS } from '../../repertoire/prune'
+import { fakeClient, world } from '../../repertoire/__tests__/fakeWorld'
 import type { ChesscomClient } from '../chesscom'
 import { ImportPage } from '../ImportPage'
 import { game } from './fixtures'
@@ -15,6 +18,19 @@ const openDb = () => {
 }
 afterEach(async () => {
   for (const n of names.splice(0)) await Dexie.delete(n)
+})
+
+const row = (id: string) => ({
+  id: `https://www.chess.com/game/live/${id}`,
+  username: 'me',
+  archiveId: 'me/2026/11',
+  endTime: Date.UTC(2026, 10, Number(id)),
+  timeClass: 'blitz' as const,
+  color: 'white' as const,
+  opponent: 'Rival',
+  result: 'win' as const,
+  pgn: '',
+  sans: [] as string[],
 })
 
 const client: ChesscomClient = {
@@ -70,6 +86,40 @@ describe('ImportPage', () => {
 
     fireEvent.change(screen.getByLabelText('Your color'), { target: { value: 'black' } })
     expect(screen.getByRole('heading', { name: 'Games (1 of 3)' })).toBeInTheDocument()
+  })
+
+  it("lists each game's deviation against the matching repertoire", async () => {
+    const db = openDb()
+    await buildAndSave(db, {
+      name: 'My 1.e4',
+      color: 'white',
+      startMoves: ['e4'],
+      speeds: ['blitz'],
+      ratings: [1600],
+      settings: { ...DEFAULT_PRUNE_SETTINGS, maxPly: 2 },
+      client: fakeClient(
+        world({
+          '': [['e4', 6, 1, 3]],
+          e4: [['e5', 5, 1, 4]],
+          'e4 e5': [['Nf3', 6, 0, 4]],
+        }),
+      ).client,
+    })
+    await db.games.bulkPut([
+      { ...row('1'), sans: ['e4', 'e5', 'Bc4'] },
+      { ...row('2'), sans: ['e4', 'c5'] },
+      { ...row('3'), sans: ['d4'], color: 'black' },
+    ])
+    await db.settings.put({
+      id: 'app',
+      importer: { ...(await getSettings(db)).importer, username: 'me' },
+    })
+
+    render(<ImportPage db={db} client={client} />)
+    expect(await screen.findByText('You left book: 2.Bc4 (repertoire: Nf3)')).toBeInTheDocument()
+    expect(screen.getByText('Opponent left book: 1…c5')).toBeInTheDocument()
+    expect(screen.getByText('No repertoire for this color')).toBeInTheDocument()
+    expect(screen.getAllByText(/My 1\.e4/)).toHaveLength(2)
   })
 
   it('shows a sync error', async () => {

@@ -22,6 +22,16 @@ export {
   type GameFilter,
 } from './games'
 export {
+  describeDeviation,
+  detectDeviation,
+  matchGame,
+  plyLabel,
+  type Deviation,
+  type DeviationKind,
+  type GameMatch,
+  type RepertoireForMatch,
+} from './deviation'
+export {
   ARCHIVE_GRACE_MS,
   archiveId,
   isMonthComplete,
