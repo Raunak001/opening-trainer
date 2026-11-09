@@ -1,9 +1,9 @@
 // chess.com Published-Data API client: strictly sequential, 429 → wait and retry.
 
 /**
- * Called directly from the browser: the Published-Data API sends
- * `Access-Control-Allow-Origin: *` (checked from `npm run dev` in T5.1, 2026-11-09: a cross-origin read returned 200). If that
- * ever changes, add a `server.proxy` entry in vite.config.ts and point `baseUrl` at it.
+ * Called directly from the browser: no Vite proxy needed. T5.1 (2026-11-09) checked that a
+ * cross-origin read from `npm run dev` returns 200 with a readable body. If that ever
+ * changes, add a `server.proxy` entry in vite.config.ts and point `baseUrl` at it.
  */
 export const CHESSCOM_URL = 'https://api.chess.com/pub'
 /** Same rule as the explorer (CLAUDE.md): on 429, wait 60s before retrying. */

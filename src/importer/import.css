@@ -50,6 +50,7 @@
   font-weight: 600;
 }
 
+.import__form select,
 .import__form input:not([type='checkbox']) {
   min-width: 200px;
   padding: 8px 10px;

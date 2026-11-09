@@ -45,6 +45,33 @@ describe('ImportPage', () => {
     expect((await getSettings(db)).importer.username).toBe('me')
   })
 
+  it("filters by time class (saved) and by the user's color", async () => {
+    const db = openDb()
+    const mixed: ChesscomClient = {
+      archives: async () => ['2026/10'],
+      month: async () => [
+        game({ moves: 'e4', timeClass: 'blitz' }),
+        game({ moves: 'd4', timeClass: 'bullet' }),
+        game({ moves: 'c4', timeClass: 'rapid', color: 'black' }),
+      ],
+    }
+    render(<ImportPage db={db} client={mixed} />)
+    const input = await screen.findByLabelText('chess.com username')
+    await waitFor(() => expect(input).toBeEnabled())
+    fireEvent.change(input, { target: { value: 'me' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sync' }))
+    expect(await screen.findByRole('heading', { name: 'Games (3)' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'bullet' }))
+    expect(screen.getByRole('heading', { name: 'Games (2 of 3)' })).toBeInTheDocument()
+    await waitFor(async () =>
+      expect((await getSettings(db)).importer.timeClasses).toEqual(['blitz', 'rapid', 'daily']),
+    )
+
+    fireEvent.change(screen.getByLabelText('Your color'), { target: { value: 'black' } })
+    expect(screen.getByRole('heading', { name: 'Games (1 of 3)' })).toBeInTheDocument()
+  })
+
   it('shows a sync error', async () => {
     const failing: ChesscomClient = {
       archives: async () => {

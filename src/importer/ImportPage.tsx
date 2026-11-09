@@ -1,7 +1,15 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { getDb, getSettings, updateSettings, type GameRow, type TrainerDB } from '../db'
+import {
+  getDb,
+  getSettings,
+  updateSettings,
+  type GameRow,
+  type TimeClass,
+  type TrainerDB,
+} from '../db'
 import { getChesscomClient, type ChesscomClient } from './chesscom'
+import { filterGames, TIME_CLASSES } from './games'
 import { syncGames, type SyncProgress } from './sync'
 import './import.css'
 
@@ -16,18 +24,26 @@ type Status =
   | { kind: 'done'; message: string }
   | { kind: 'error'; message: string }
 
+type ColorFilter = 'both' | GameRow['color']
+
 const RESULT_LABEL: Record<GameRow['result'], string> = { win: 'Won', loss: 'Lost', draw: 'Draw' }
 
 /** Import chess.com games and show where each one left the repertoire. */
 export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) {
   const db = dbProp ?? getDb()
   const [username, setUsername] = useState<string>()
+  const [timeClasses, setTimeClasses] = useState<TimeClass[]>([])
+  const [color, setColor] = useState<ColorFilter>('both')
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
   const abort = useRef<AbortController>(undefined)
 
   useEffect(() => {
     let live = true
-    getSettings(db).then((s) => live && setUsername(s.importer.username))
+    getSettings(db).then((s) => {
+      if (!live) return
+      setUsername(s.importer.username)
+      setTimeClasses(s.importer.timeClasses)
+    })
     return () => {
       live = false
       abort.current?.abort()
@@ -39,6 +55,14 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
     async (): Promise<GameRow[]> => (user ? db.games.where('username').equals(user).toArray() : []),
     [db, user],
   )
+
+  function toggleTimeClass(tc: TimeClass, on: boolean) {
+    const next = TIME_CLASSES.filter((t) => (t === tc ? on : timeClasses.includes(t)))
+    setTimeClasses(next)
+    updateSettings(db, { importer: { timeClasses: next } }).catch((err: unknown) =>
+      setStatus({ kind: 'error', message: String(err) }),
+    )
+  }
 
   async function onSync(e: FormEvent) {
     e.preventDefault()
@@ -66,7 +90,10 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
   }
 
   const syncing = status.kind === 'syncing'
-  const sorted = [...(games ?? [])].sort((a, b) => b.endTime - a.endTime)
+  const shown = filterGames(games ?? [], {
+    timeClasses,
+    color: color === 'both' ? undefined : color,
+  })
 
   return (
     <main className="import">
@@ -92,6 +119,29 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
             </button>
           )}
         </form>
+        <div className="import__form">
+          <fieldset className="import__checks">
+            <legend>Time classes</legend>
+            {TIME_CLASSES.map((tc) => (
+              <label key={tc}>
+                <input
+                  type="checkbox"
+                  checked={timeClasses.includes(tc)}
+                  onChange={(e) => toggleTimeClass(tc, e.target.checked)}
+                />
+                {tc}
+              </label>
+            ))}
+          </fieldset>
+          <label>
+            Your color
+            <select value={color} onChange={(e) => setColor(e.target.value as ColorFilter)}>
+              <option value="both">Both</option>
+              <option value="white">White</option>
+              <option value="black">Black</option>
+            </select>
+          </label>
+        </div>
         {status.kind === 'syncing' && (
           <p role="status">
             {status.progress
@@ -111,11 +161,14 @@ export function ImportPage({ db: dbProp, client: clientProp }: ImportPageProps) 
         )}
       </section>
 
-      {sorted.length > 0 && (
+      {(games?.length ?? 0) > 0 && (
         <section className="import__panel" aria-label="Games">
-          <h2>Games ({sorted.length})</h2>
+          <h2>
+            Games ({shown.length}
+            {shown.length !== games?.length && ` of ${games?.length}`})
+          </h2>
           <ol className="import__games">
-            {sorted.map((g) => (
+            {shown.map((g) => (
               <li key={g.id} className="import__game">
                 <span className="import__muted">{new Date(g.endTime).toLocaleDateString()}</span>
                 <span>

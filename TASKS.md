@@ -68,7 +68,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 **Phase done when:** syncing a username lists each game's deviation ply; misplayed positions show up as due cards.
 
 - [x] **T5.1 Archive fetch + sync** (M) — sequential month fetch, store immutable past months, refetch current only, proxy if CORS blocks.
-- [ ] **T5.2 PGN parse + filters** (S) — `loadPgn`, keep user's color and chosen time classes.
+- [x] **T5.2 PGN parse + filters** (S) — `loadPgn`, keep user's color and chosen time classes.
 - [ ] **T5.3 Deviation detection** (M) — walk game vs tree, record who left book and at which ply. Fixture tests.
 - [ ] **T5.4 Auto-cards** (M) — user left book → card failed + due now; opponent left book and user lost eval → card from engine best.
 - [ ] **T5.5 Coverage gaps report** (S) — frequent missing opponent replies, button to extend tree.
