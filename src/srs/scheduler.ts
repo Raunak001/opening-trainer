@@ -1,4 +1,4 @@
-import { fsrs, type FSRS, type Grade } from 'ts-fsrs'
+import { fsrs, State, type FSRS, type Grade } from 'ts-fsrs'
 import {
   DEFAULT_SETTINGS,
   getSettings,
@@ -8,8 +8,17 @@ import {
   type ReviewLogRow,
   type TrainerDB,
 } from '../db'
-import { loadRepertoire } from '../repertoire/builder'
+import { listRepertoires, loadRepertoire } from '../repertoire/builder'
 import { cardTargets, planCardSync, type CardSyncPlan } from './cards'
+import {
+  lineProgress,
+  overallMastery,
+  studyStreak,
+  todayCounts,
+  type LineProgress,
+  type Streak,
+  type TodayCounts,
+} from './progress'
 import { buildDueQueue, dailyUsage, startOfDay, type DueQueue } from './queue'
 
 /**
@@ -134,4 +143,67 @@ export async function loadDueQueue(
       newRank,
     })
   })
+}
+
+export interface RepertoireProgress {
+  id: string
+  name: string
+  color: 'white' | 'black'
+  cards: number
+  studied: number
+  /** Mean card mastery, 0–1. */
+  mastery: number
+  /** Weakest first. */
+  lines: LineProgress[]
+}
+
+export interface Progress {
+  today: TodayCounts
+  streak: Streak
+  /** Mean card mastery over all repertoires, 0–1. */
+  mastery: number
+  masteredAfterDays: number
+  repertoires: RepertoireProgress[]
+}
+
+/** Everything the progress view shows, read in one transaction. */
+export async function loadProgress(db: TrainerDB, now: Date = new Date()): Promise<Progress> {
+  return db.transaction(
+    'r',
+    [db.cards, db.reviewLogs, db.repertoires, db.nodes, db.settings],
+    async () => {
+      const settings = await getSettings(db)
+      const days = settings.progress.masteredAfterDays
+      const cards = await db.cards.toArray()
+      const todayLogs = await db.reviewLogs
+        .where('review')
+        .between(startOfDay(now), now, true, true)
+        .toArray()
+      const reviewTimes = (await db.reviewLogs.orderBy('review').keys()) as Date[]
+
+      const repertoires: RepertoireProgress[] = []
+      for (const row of await listRepertoires(db)) {
+        const rep = await loadRepertoire(db, row.id)
+        if (!rep) continue
+        const own = cards.filter((c) => c.repertoireId === row.id && !c.suspended)
+        repertoires.push({
+          id: row.id,
+          name: row.name,
+          color: row.color,
+          cards: own.length,
+          studied: own.filter((c) => c.state !== State.New).length,
+          mastery: overallMastery(own, days),
+          lines: lineProgress(rep.tree, own, days),
+        })
+      }
+
+      return {
+        today: todayCounts(cards, now, settings.daily, dailyUsage(todayLogs, now)),
+        streak: studyStreak(reviewTimes, now),
+        mastery: overallMastery(cards, days),
+        masteredAfterDays: days,
+        repertoires,
+      }
+    },
+  )
 }

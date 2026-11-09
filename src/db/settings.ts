@@ -19,12 +19,17 @@ export interface AppSettings {
     newCards: number
     reviews: number
   }
+  progress: {
+    /** A card counts as fully mastered once its FSRS stability reaches this many days. */
+    masteredAfterDays: number
+  }
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   grading: { hardAfterMs: 15_000, easyUnderMs: 2_000 },
   fsrs: { requestRetention: 0.9 },
   daily: { newCards: 20, reviews: 200 },
+  progress: { masteredAfterDays: 21 },
 }
 
 export type SettingsPatch = { [K in keyof AppSettings]?: Partial<AppSettings[K]> }
@@ -37,6 +42,7 @@ export function mergeSettings(base: AppSettings, patch: SettingsPatch | undefine
     grading: { ...base.grading, ...patch?.grading },
     fsrs: { ...base.fsrs, ...patch?.fsrs },
     daily: { ...base.daily, ...patch?.daily },
+    progress: { ...base.progress, ...patch?.progress },
   }
 }
 

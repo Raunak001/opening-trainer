@@ -6,9 +6,12 @@ export {
   CardNotFoundError,
   createScheduler,
   loadDueQueue,
+  loadProgress,
   reviewCard,
   syncCards,
   type CardSyncSummary,
+  type Progress,
+  type RepertoireProgress,
   type ReviewResult,
 } from './scheduler'
 export {
@@ -35,3 +38,14 @@ export {
   type QueueOptions,
   type Session,
 } from './queue'
+export {
+  cardMastery,
+  endOfDay,
+  lineProgress,
+  overallMastery,
+  studyStreak,
+  todayCounts,
+  type LineProgress,
+  type Streak,
+  type TodayCounts,
+} from './progress'

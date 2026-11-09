@@ -11,7 +11,7 @@ describe('App', () => {
     expect(screen.getByRole('option', { name: 'Promotion (Black)' })).toBeInTheDocument()
   })
 
-  it('switches between the drill, builder and tree views', async () => {
+  it('switches between the views', async () => {
     render(<App />)
     expect(screen.getByRole('button', { name: 'Drill' })).toHaveAttribute('aria-current', 'page')
 
@@ -23,6 +23,16 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Tree' }))
     expect(screen.getByRole('button', { name: 'Tree' })).toHaveAttribute('aria-current', 'page')
     expect(await screen.findByText(/No repertoires yet|Start position/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Progress' }))
+    expect(screen.getByRole('button', { name: 'Progress' })).toHaveAttribute('aria-current', 'page')
+    expect(
+      await screen.findByText(
+        /Loading progress|No repertoires yet|Due today/,
+        {},
+        { timeout: 4000 },
+      ),
+    ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Drill' }))
     expect(screen.getByText('Challenge 1/8')).toBeInTheDocument()
