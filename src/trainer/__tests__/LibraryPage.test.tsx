@@ -47,7 +47,7 @@ describe('LibraryPage', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Color' }), {
       target: { value: 'white' },
     })
-    expect(within(grid).getAllByRole('listitem')).toHaveLength(6)
+    expect(within(grid).getAllByRole('listitem')).toHaveLength(8)
     fireEvent.change(screen.getByRole('combobox', { name: 'First move' }), {
       target: { value: 'd4' },
     })
@@ -55,7 +55,7 @@ describe('LibraryPage', () => {
       within(grid)
         .getAllByRole('listitem')
         .map((li) => li.textContent),
-    ).toEqual([expect.stringContaining("Queen's Gambit")])
+    ).toEqual([expect.stringContaining("Queen's Gambit"), expect.stringContaining('London System')])
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Color' }), { target: { value: 'all' } })
     fireEvent.change(screen.getByRole('combobox', { name: 'First move' }), {

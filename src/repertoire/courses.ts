@@ -118,6 +118,7 @@ export async function buildCourse(
     settings: tierSettings(entry, tier),
     overrides: existing?.overrides,
     extraMoves: existing?.extraMoves,
+    forcedMoves: entry.forcedMoves,
     client: options.client,
     onProgress: options.onProgress,
     signal: options.signal,

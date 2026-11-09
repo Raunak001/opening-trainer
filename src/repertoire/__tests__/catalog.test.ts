@@ -17,10 +17,10 @@ async function tsvLabel(entry: CatalogEntry): Promise<string | undefined> {
 }
 
 describe('CATALOG', () => {
-  it('has unique ids and the agreed first list', () => {
+  it('has unique ids and the agreed list', () => {
     const ids = CATALOG.map((e) => e.id)
     expect(new Set(ids).size).toBe(ids.length)
-    expect(CATALOG.filter((e) => e.color === 'white')).toHaveLength(6)
+    expect(CATALOG.filter((e) => e.color === 'white')).toHaveLength(8)
     expect(CATALOG.filter((e) => e.color === 'black')).toHaveLength(9)
   })
 
@@ -36,6 +36,19 @@ describe('CATALOG', () => {
       expect(await tsvLabel(entry)).toBe(entry.tsvName ?? entry.name)
     },
   )
+
+  it('gives systems legal-looking setup moves', () => {
+    const systems = CATALOG.filter((e) => e.forcedMoves)
+    expect(systems.map((e) => e.id)).toEqual(['london', 'kia'])
+    // The setup is playable in order against a quiet reply.
+    const chess = new Chess()
+    chess.move('d4')
+    chess.move('d5')
+    for (const san of catalogEntry('london')?.forcedMoves ?? []) {
+      chess.move(san)
+      chess.move(chess.moves()[0])
+    }
+  })
 
   it('looks entries up by id', () => {
     expect(catalogEntry('caro-kann')?.name).toBe('Caro-Kann Defense')

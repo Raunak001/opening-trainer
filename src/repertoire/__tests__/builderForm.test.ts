@@ -76,6 +76,7 @@ describe('validateForm', () => {
         settings: DEFAULT_PRUNE_SETTINGS,
         overrides: {},
         extraMoves: {},
+        forcedMoves: [],
       },
     })
   })

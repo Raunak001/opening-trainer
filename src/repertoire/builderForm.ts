@@ -60,6 +60,8 @@ export interface BuilderForm {
   overrides: Record<string, string>
   /** Not on the form; opponent moves added from the import page, kept across rebuilds. */
   extraMoves: Record<string, string[]>
+  /** Not on the form; a course's system moves (T7.9), kept across rebuilds. */
+  forcedMoves: string[]
 }
 
 export const DEFAULT_FORM: BuilderForm = {
@@ -75,6 +77,7 @@ export const DEFAULT_FORM: BuilderForm = {
   userMinShare: DEFAULT_PRUNE_SETTINGS.userMinShare,
   overrides: {},
   extraMoves: {},
+  forcedMoves: [],
 }
 
 export type ParsedMoves = { ok: true; sans: string[] } | { ok: false; error: string }
@@ -116,6 +119,7 @@ export interface ValidBuild {
   settings: PruneSettings
   overrides: Record<string, string>
   extraMoves: Record<string, string[]>
+  forcedMoves: string[]
 }
 
 export type FormResult =
@@ -175,6 +179,7 @@ export function validateForm(form: BuilderForm): FormResult {
       },
       overrides: { ...form.overrides },
       extraMoves: { ...form.extraMoves },
+      forcedMoves: [...form.forcedMoves],
     },
   }
 }
@@ -196,6 +201,7 @@ export function formFromRow(row: RepertoireRow): BuilderForm {
     userMinShare: row.settings.userMinShare,
     overrides: { ...row.overrides },
     extraMoves: { ...row.extraMoves },
+    forcedMoves: [...(row.forcedMoves ?? [])],
   }
 }
 

@@ -24,6 +24,12 @@ export interface CatalogEntry {
    * nearest named ancestor), when it differs from `name`.
    */
   tsvName?: string
+  /**
+   * A system's setup moves (T7.9), in priority order: the course plays the
+   * first one that is legal (and played by people) instead of the automatic
+   * pick, e.g. the London's Bf4 against everything.
+   */
+  forcedMoves?: string[]
 }
 
 /**
@@ -80,6 +86,27 @@ export const CATALOG: readonly CatalogEntry[] = [
     color: 'white',
     startMoves: ['c4'],
     blurb: 'Control d5 from the flank. Positional, and it often transposes to other openings.',
+    family: 'flank',
+  },
+  {
+    id: 'london',
+    name: 'London System',
+    tsvName: "Queen's Pawn Game",
+    color: 'white',
+    startMoves: ['d4'],
+    forcedMoves: ['Bf4', 'e3', 'Nf3'],
+    blurb: 'Bf4, e3 and Nf3 against almost anything. One setup to learn, solid and easy to play.',
+    family: 'closed',
+  },
+  {
+    id: 'kia',
+    name: "King's Indian Attack",
+    tsvName: 'Zukertort Opening',
+    color: 'white',
+    startMoves: ['Nf3'],
+    forcedMoves: ['g3', 'Bg2', 'O-O', 'd3'],
+    blurb:
+      'Nf3, g3, Bg2, O-O and d3 whatever Black does, then e4. A flexible system with a kingside attack.',
     family: 'flank',
   },
   // Black

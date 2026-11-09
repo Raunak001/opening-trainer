@@ -88,6 +88,11 @@ export interface RepertoireRow {
    */
   extraMoves?: Record<string, string[]>
   /**
+   * A system's moves, played wherever legal and played (T7.9; see the builder's
+   * `forcedMoves`). Optional, not indexed.
+   */
+  forcedMoves?: string[]
+  /**
    * Set when the repertoire is a library course (T7.3): the catalog entry id
    * and depth tier it was built from. Optional, not indexed.
    */

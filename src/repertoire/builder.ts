@@ -1,5 +1,12 @@
 import { nodeId, type NodeRow, type RepertoireRow, type TrainerDB } from '../db'
-import type { ExplorerClient, ExplorerQuery, RatingBucket, Speed } from './explorer'
+import { Chess } from 'chess.js'
+import type {
+  ExplorerClient,
+  ExplorerQuery,
+  ExplorerResponse,
+  RatingBucket,
+  Speed,
+} from './explorer'
 import type { PositionKey } from './positionKey'
 import {
   DEFAULT_PRUNE_SETTINGS,
@@ -15,6 +22,7 @@ import {
   sideToMove,
   TreeError,
   type GameStats,
+  totalGames,
   type RepertoireTree,
   type TreeNode,
 } from './tree'
@@ -38,6 +46,13 @@ export interface BuildOptions {
    * where illegal, unreached, or past the depth limit.
    */
   extraMoves?: Readonly<Record<PositionKey, readonly string[]>>
+  /**
+   * A system's moves (T7.9), in priority order: at every user-to-move position
+   * the first one that is legal and played in at least `FORCED_MIN_SHARE` of
+   * the explorer's games replaces the automatic pick, e.g. "always Bf4". Moves
+   * swapped in the tree viewer (`overrides`) still win.
+   */
+  forcedMoves?: readonly string[]
   client: ExplorerClient
   onProgress?: (progress: BuildProgress) => void
   signal?: AbortSignal
@@ -62,6 +77,36 @@ export interface BuildResult {
   appliedOverrides: PositionKey[]
   /** Extra-move positions that were reached and got at least one move added. */
   appliedExtraMoves: PositionKey[]
+  /** Positions where a forced system move replaced the automatic pick. */
+  appliedForced: PositionKey[]
+}
+
+/**
+ * A forced move must have been played in this share of the position's games.
+ * Keeps a system from playing a legal move nobody plays (one that just loses
+ * a piece, say) while still forcing it wherever people do play it.
+ */
+export const FORCED_MIN_SHARE = 0.01
+
+/** The first forced move that is legal and played enough at a position, if any. */
+export function forcedPick(
+  response: ExplorerResponse,
+  fen: string,
+  forcedMoves: readonly string[],
+): string | undefined {
+  const total = totalGames(response)
+  if (total === 0) return undefined
+  for (const san of forcedMoves) {
+    const stats = response.moves.find((m) => m.san === san)
+    if (!stats || totalGames(stats) / total < FORCED_MIN_SHARE) continue
+    try {
+      new Chess(fen).move(san)
+      return san
+    } catch {
+      // Not legal here (e.g. already played): try the next one.
+    }
+  }
+  return undefined
 }
 
 /**
@@ -101,6 +146,8 @@ export async function buildRepertoire(options: BuildOptions): Promise<BuildResul
   const extraMoves = options.extraMoves ?? {}
   const appliedOverrides: PositionKey[] = []
   const appliedExtraMoves: PositionKey[] = []
+  const appliedForced: PositionKey[] = []
+  const forcedMoves = options.forcedMoves ?? []
 
   let tree = createTree()
   let lookups = 0
@@ -138,6 +185,15 @@ export async function buildRepertoire(options: BuildOptions): Promise<BuildResul
     })
     let picks = selection.moves.map(({ move }) => ({ san: move.san, stats: move as GameStats }))
     const override = overrides[current]
+    const forced =
+      !override && side === color && selection.reason !== 'depth' && forcedMoves.length
+        ? forcedPick(response, node.fen, forcedMoves)
+        : undefined
+    if (forced) {
+      const stats = response.moves.find((m) => m.san === forced) as GameStats
+      picks = [{ san: forced, stats }]
+      appliedForced.push(current)
+    }
     if (override && side === color && selection.reason !== 'depth') {
       const stats = response.moves.find((m) => m.san === override)
       try {
@@ -185,7 +241,7 @@ export async function buildRepertoire(options: BuildOptions): Promise<BuildResul
     })
   }
 
-  return { tree, lookups, appliedOverrides, appliedExtraMoves }
+  return { tree, lookups, appliedOverrides, appliedExtraMoves, appliedForced }
 }
 
 /** A repertoire with its tree assembled from the `nodes` table. */
@@ -280,6 +336,7 @@ export async function buildAndSave(
     ratings: [...options.ratings],
     settings,
     overrides: { ...options.overrides },
+    ...(options.forcedMoves?.length && { forcedMoves: [...options.forcedMoves] }),
     extraMoves: Object.fromEntries(
       Object.entries(options.extraMoves ?? {}).map(([k, sans]) => [k, [...sans]]),
     ),
