@@ -116,3 +116,4 @@ export {
 } from './treeView'
 export { shortestParent } from './tree'
 export { TreeViewer, type TreeViewerProps } from './TreeViewer'
+export { CATALOG, catalogEntry, firstMove, type CatalogEntry, type OpeningFamily } from './catalog'
