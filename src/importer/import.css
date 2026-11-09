@@ -213,3 +213,8 @@
   font-size: 12px;
   font-weight: 600;
 }
+
+.import__form input[type='number'] {
+  min-width: 0;
+  width: 72px;
+}

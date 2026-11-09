@@ -71,7 +71,7 @@ Prompt to start a ticket: `Do T1.3. Follow CLAUDE.md. Stop and ask if anything i
 - [x] **T5.2 PGN parse + filters** (S) — `loadPgn`, keep user's color and chosen time classes.
 - [x] **T5.3 Deviation detection** (M) — walk game vs tree, record who left book and at which ply. Fixture tests.
 - [x] **T5.4 Auto-cards** (M) — user left book → card failed + due now; opponent left book and user lost eval → card from engine best.
-- [ ] **T5.5 Coverage gaps report** (S) — frequent missing opponent replies, button to extend tree.
+- [x] **T5.5 Coverage gaps report** (S) — frequent missing opponent replies, button to extend tree.
 
 ## Phase 6 — Concept lessons
 

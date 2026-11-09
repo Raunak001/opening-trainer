@@ -9,6 +9,7 @@ import {
   type TrainerDB,
 } from '../db'
 import { listRepertoires, loadRepertoire, type Repertoire } from '../repertoire/builder'
+import { getExplorerClient, type ExplorerClient } from '../repertoire/explorer'
 import { getChesscomClient, type ChesscomClient } from './chesscom'
 import {
   applyAutoCards,
@@ -17,6 +18,7 @@ import {
   type AutoCardSummary,
 } from './autoCards'
 import { describeDeviation, matchGame, type GameMatch } from './deviation'
+import { coverageGaps, extendTree, formatMoves, type CoverageGap } from './gaps'
 import { filterGames, TIME_CLASSES } from './games'
 import { syncGames, type SyncProgress, type SyncResult } from './sync'
 import './import.css'
@@ -26,6 +28,8 @@ export interface ImportPageProps {
   client?: ChesscomClient
   /** Grades the user's reply after an opponent leaves book; Stockfish by default. */
   gradeReply?: ApplyOptions['gradeReply']
+  /** Explorer client for extending a tree; the app's cached client by default. */
+  explorer?: ExplorerClient
 }
 
 type Status =
@@ -64,11 +68,17 @@ type ColorFilter = 'both' | GameRow['color']
 const RESULT_LABEL: Record<GameRow['result'], string> = { win: 'Won', loss: 'Lost', draw: 'Draw' }
 
 /** Import chess.com games and show where each one left the repertoire. */
-export function ImportPage({ db: dbProp, client: clientProp, gradeReply }: ImportPageProps) {
+export function ImportPage({
+  db: dbProp,
+  client: clientProp,
+  gradeReply,
+  explorer,
+}: ImportPageProps) {
   const db = dbProp ?? getDb()
   const [username, setUsername] = useState<string>()
   const [timeClasses, setTimeClasses] = useState<TimeClass[]>([])
   const [color, setColor] = useState<ColorFilter>('both')
+  const [minGapGames, setMinGapGames] = useState(2)
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
   const abort = useRef<AbortController>(undefined)
 
@@ -78,6 +88,7 @@ export function ImportPage({ db: dbProp, client: clientProp, gradeReply }: Impor
       if (!live) return
       setUsername(s.importer.username)
       setTimeClasses(s.importer.timeClasses)
+      setMinGapGames(s.importer.minGapGames)
     })
     return () => {
       live = false
@@ -109,6 +120,19 @@ export function ImportPage({ db: dbProp, client: clientProp, gradeReply }: Impor
     return out
   }, [games, repertoires])
   const repName = (id: string) => repertoires?.find((r) => r.id === id)?.name ?? ''
+
+  const gaps = useMemo(
+    () => coverageGaps(games ?? [], matches, { timeClasses, minGames: minGapGames }),
+    [games, matches, timeClasses, minGapGames],
+  )
+
+  function changeMinGapGames(value: number) {
+    if (!Number.isInteger(value) || value < 1) return
+    setMinGapGames(value)
+    updateSettings(db, { importer: { minGapGames: value } }).catch((err: unknown) =>
+      setStatus({ kind: 'error', message: String(err) }),
+    )
+  }
 
   /** Fails and creates cards from games not checked yet (T5.4). */
   async function checkCards(signal: AbortSignal): Promise<AutoCardSummary> {
@@ -157,6 +181,21 @@ export function ImportPage({ db: dbProp, client: clientProp, gradeReply }: Impor
       }
     })
   }
+
+  const onExtend = (gap: CoverageGap) =>
+    run(async (signal) => {
+      const name = repName(gap.repertoireId)
+      await extendTree(db, gap, {
+        client: explorer ?? getExplorerClient(),
+        signal,
+        onProgress: (p) =>
+          setStatus({
+            kind: 'busy',
+            message: `Rebuilding ${name}: ${p.positions} positions, ${p.queued} to look up…`,
+          }),
+      })
+      return [`Added ${formatMoves(gap.line)} to ${name}. New cards are in your review queue.`]
+    })
 
   const onCheck = () => run(async (signal) => [cardsMessage(await checkCards(signal))])
 
@@ -228,6 +267,51 @@ export function ImportPage({ db: dbProp, client: clientProp, gradeReply }: Impor
           </p>
         )}
       </section>
+
+      {(games?.length ?? 0) > 0 && (
+        <section className="import__panel" aria-label="Coverage gaps">
+          <h2>Coverage gaps ({gaps.length})</h2>
+          <p className="import__muted">
+            Opponent replies your tree does not cover, most frequent first. Adding one keeps it in
+            the tree on every rebuild and gives you an answer to learn.
+          </p>
+          <div className="import__form">
+            <label>
+              Seen in at least
+              <input
+                type="number"
+                min={1}
+                value={minGapGames}
+                onChange={(e) => changeMinGapGames(Number(e.target.value))}
+              />
+            </label>
+          </div>
+          {gaps.length > 0 && (
+            <ol className="import__gaps">
+              {gaps.map((gap) => (
+                <li key={gap.id} className="import__gap">
+                  <span className="import__gap-moves">
+                    <span>{formatMoves(gap.line)}</span>
+                    <span className="import__muted">{repName(gap.repertoireId)}</span>
+                  </span>
+                  <span className="import__muted">
+                    {gap.games} {gap.games === 1 ? 'game' : 'games'} · you scored{' '}
+                    {Math.round(gap.score * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onExtend(gap)}
+                    aria-label={`Add ${formatMoves(gap.line)} to ${repName(gap.repertoireId)}`}
+                  >
+                    Add to tree
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      )}
 
       {(games?.length ?? 0) > 0 && (
         <section className="import__panel" aria-label="Games">

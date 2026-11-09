@@ -160,6 +160,58 @@ describe('ImportPage', () => {
     expect(await screen.findByText('card failed')).toBeInTheDocument()
   })
 
+  it('lists coverage gaps and adds one to the tree', async () => {
+    const db = openDb()
+    const explorer = fakeClient(
+      world({
+        '': [['e4', 50, 10, 40]],
+        e4: [
+          ['e5', 90, 10, 80],
+          ['c5', 2, 1, 2],
+        ],
+        'e4 e5': [['Nf3', 50, 10, 40]],
+        'e4 c5': [['Nf3', 50, 10, 40]],
+      }),
+    ).client
+    await buildAndSave(db, {
+      name: 'My 1.e4',
+      color: 'white',
+      startMoves: ['e4'],
+      speeds: ['blitz'],
+      ratings: [1600],
+      settings: { ...DEFAULT_PRUNE_SETTINGS, maxPly: 2 },
+      client: explorer,
+    })
+    await db.games.bulkPut([
+      { ...row('4'), sans: ['e4', 'c5', 'Nf3'], cards: { processedAt: 1, outcome: 'none' } },
+      {
+        ...row('5'),
+        sans: ['e4', 'c5', 'c3'],
+        result: 'loss',
+        cards: { processedAt: 1, outcome: 'none' },
+      },
+      { ...row('6'), sans: ['e4', 'd5'], cards: { processedAt: 1, outcome: 'none' } },
+    ])
+    await db.settings.put({
+      id: 'app',
+      importer: { ...(await getSettings(db)).importer, username: 'me' },
+    })
+
+    render(<ImportPage db={db} client={client} gradeReply={noGrades} explorer={explorer} />)
+    expect(await screen.findByRole('heading', { name: 'Coverage gaps (1)' })).toBeInTheDocument()
+    expect(screen.getByText('2 games · you scored 50%')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Seen in at least'), { target: { value: '1' } })
+    expect(screen.getByRole('heading', { name: 'Coverage gaps (2)' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add 1.e4 c5 to My 1.e4' }))
+    expect(
+      await screen.findByText('Added 1.e4 c5 to My 1.e4. New cards are in your review queue.'),
+    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Coverage gaps (1)' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Add 1.e4 c5 to My 1.e4' })).not.toBeInTheDocument()
+  })
+
   it('shows a sync error', async () => {
     const failing: ChesscomClient = {
       archives: async () => {

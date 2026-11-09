@@ -75,6 +75,7 @@ describe('validateForm', () => {
         ratings: [1600, 1800],
         settings: DEFAULT_PRUNE_SETTINGS,
         overrides: {},
+        extraMoves: {},
       },
     })
   })

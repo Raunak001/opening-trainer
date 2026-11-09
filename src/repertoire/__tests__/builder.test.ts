@@ -342,3 +342,48 @@ describe('persistence', () => {
     expect((await listRepertoires(db)).map((r) => r.name)).toEqual(['new', 'old'])
   })
 })
+
+describe('buildRepertoire extraMoves', () => {
+  // 1…c5 is under the 3% floor, so pruning drops it.
+  const data = world({
+    '': [['e4', 50, 10, 40]],
+    e4: [
+      ['e5', 90, 10, 80],
+      ['c5', 2, 1, 2],
+    ],
+    'e4 e5': [['Nf3', 50, 10, 40]],
+    'e4 c5': [
+      ['Nf3', 50, 10, 40],
+      ['c3', 10, 1, 9],
+    ],
+  })
+  const build = (extraMoves?: Record<string, string[]>) =>
+    buildRepertoire({
+      color: 'white',
+      startMoves: ['e4'],
+      speeds: ['blitz'],
+      ratings: [1600],
+      settings: { ...DEFAULT_PRUNE_SETTINGS, maxPly: 2 },
+      extraMoves,
+      client: fakeClient(data).client,
+    })
+
+  it('keeps an added opponent reply and finds the user answer below it', async () => {
+    expect((await build()).tree.nodes[keyAfter('e4 c5')]).toBeUndefined()
+    const r = await build({ [keyAfter('e4')]: ['c5'] })
+    const edge = r.tree.nodes[keyAfter('e4')].edges.find((e) => e.san === 'c5')
+    expect(edge).toMatchObject({ white: 2, draws: 1, black: 2 })
+    expect(r.tree.nodes[keyAfter('e4 c5')].edges.map((e) => e.san)).toEqual(['Nf3'])
+    expect(r.appliedExtraMoves).toEqual([keyAfter('e4')])
+  })
+
+  it('ignores illegal moves, moves already kept, and user-to-move positions', async () => {
+    const r = await build({
+      [keyAfter('e4')]: ['e5', 'Ke3'],
+      [keyAfter('e4 e5')]: ['d4'],
+    })
+    expect(r.tree.nodes[keyAfter('e4')].edges.map((e) => e.san)).toEqual(['e5'])
+    expect(r.tree.nodes[keyAfter('e4 e5')].edges.map((e) => e.san)).toEqual(['Nf3'])
+    expect(r.appliedExtraMoves).toEqual([])
+  })
+})

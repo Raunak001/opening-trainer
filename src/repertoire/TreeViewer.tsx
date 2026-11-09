@@ -221,6 +221,7 @@ function RepertoireTree({
     nextOverrides: Record<PositionKey, string>,
     message: string,
     focus?: PositionKey,
+    nextExtraMoves: Record<PositionKey, string[]> = row.extraMoves ?? {},
   ) {
     setSwap(undefined)
     const controller = new AbortController()
@@ -236,6 +237,7 @@ function RepertoireTree({
         ratings: row.ratings,
         settings: row.settings,
         overrides: nextOverrides,
+        extraMoves: nextExtraMoves,
         client: getClient(),
         signal: controller.signal,
         onProgress: (progress) => setStatus({ kind: 'building', progress }),
@@ -265,6 +267,7 @@ function RepertoireTree({
   }
 
   const overrideCount = Object.keys(overrides).length
+  const extraCount = Object.values(row.extraMoves ?? {}).reduce((n, sans) => n + sans.length, 0)
   const rootLabel = labels[tree.rootKey]
 
   return (
@@ -274,6 +277,7 @@ function RepertoireTree({
           {row.color === 'white' ? 'White' : 'Black'} · {nodes.length} positions · {userMoves} of
           your moves
           {overrideCount > 0 && ` · ${overrideCount} changed by you`}
+          {extraCount > 0 && ` · ${extraCount} opponent moves added from games`}
         </p>
         <div className="tree-viewer__actions">
           <button type="button" onClick={() => setExpanded(allExpandable(tree))}>
@@ -282,11 +286,11 @@ function RepertoireTree({
           <button type="button" onClick={() => setExpanded(new Set([tree.rootKey]))}>
             Collapse all
           </button>
-          {overrideCount > 0 && (
+          {overrideCount + extraCount > 0 && (
             <button
               type="button"
               disabled={building}
-              onClick={() => rebuild({}, 'All your changes were cleared.')}
+              onClick={() => rebuild({}, 'All your changes were cleared.', undefined, {})}
             >
               Reset changes
             </button>

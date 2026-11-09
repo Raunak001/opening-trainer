@@ -54,3 +54,11 @@ export {
   type SyncResult,
 } from './sync'
 export { ImportPage, type ImportPageProps } from './ImportPage'
+export {
+  coverageGaps,
+  extendTree,
+  formatMoves,
+  GapError,
+  type CoverageGap,
+  type ExtendOptions,
+} from './gaps'

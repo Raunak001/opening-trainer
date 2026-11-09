@@ -32,6 +32,12 @@ export interface BuildOptions {
    * position is never reached.
    */
   overrides?: Readonly<Record<PositionKey, string>>
+  /**
+   * Opponent replies to keep at a position (position key → SANs) even when
+   * pruning drops them, e.g. coverage gaps found in imported games. Ignored
+   * where illegal, unreached, or past the depth limit.
+   */
+  extraMoves?: Readonly<Record<PositionKey, readonly string[]>>
   client: ExplorerClient
   onProgress?: (progress: BuildProgress) => void
   signal?: AbortSignal
@@ -54,6 +60,8 @@ export interface BuildResult {
   lookups: number
   /** Override positions that were reached and applied. */
   appliedOverrides: PositionKey[]
+  /** Extra-move positions that were reached and got at least one move added. */
+  appliedExtraMoves: PositionKey[]
 }
 
 /**
@@ -90,7 +98,9 @@ export async function buildRepertoire(options: BuildOptions): Promise<BuildResul
   const { color, client, onProgress, signal } = options
   const settings = options.settings ?? DEFAULT_PRUNE_SETTINGS
   const overrides = options.overrides ?? {}
+  const extraMoves = options.extraMoves ?? {}
   const appliedOverrides: PositionKey[] = []
+  const appliedExtraMoves: PositionKey[] = []
 
   let tree = createTree()
   let lookups = 0
@@ -139,6 +149,21 @@ export async function buildRepertoire(options: BuildOptions): Promise<BuildResul
         if (!(err instanceof TreeError)) throw err
       }
     }
+    const extras = side !== color && selection.reason !== 'depth' ? (extraMoves[current] ?? []) : []
+    let addedExtra = false
+    for (const san of extras) {
+      if (picks.some((p) => p.san === san)) continue
+      try {
+        addMove(tree, current, san) // legality check only
+      } catch (err) {
+        if (!(err instanceof TreeError)) throw err
+        continue
+      }
+      const stats = response.moves.find((m) => m.san === san)
+      picks = [...picks, { san, stats: stats ?? { white: 0, draws: 0, black: 0 } }]
+      addedExtra = true
+    }
+    if (addedExtra) appliedExtraMoves.push(current)
     for (const pick of picks) {
       const r = addMove(tree, current, pick.san, pick.stats)
       tree = r.tree
@@ -160,7 +185,7 @@ export async function buildRepertoire(options: BuildOptions): Promise<BuildResul
     })
   }
 
-  return { tree, lookups, appliedOverrides }
+  return { tree, lookups, appliedOverrides, appliedExtraMoves }
 }
 
 /** A repertoire with its tree assembled from the `nodes` table. */
@@ -246,6 +271,9 @@ export async function buildAndSave(
     ratings: [...options.ratings],
     settings,
     overrides: { ...options.overrides },
+    extraMoves: Object.fromEntries(
+      Object.entries(options.extraMoves ?? {}).map(([k, sans]) => [k, [...sans]]),
+    ),
     tree,
   })
   return (await loadRepertoire(db, id)) as Repertoire
