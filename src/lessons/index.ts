@@ -29,3 +29,21 @@ export { bundledPacks, loadPacks, type LoadedPacks } from './packs'
 export { useLesson, type LessonOptions } from './useLesson'
 export { LessonPlayer, type LessonPlayerProps } from './LessonPlayer'
 export { LessonsPage, type LessonsPageProps } from './LessonsPage'
+export {
+  candidateLines,
+  draftExplanation,
+  formFromLesson,
+  idPrefix,
+  isWithin,
+  lessonFromForm,
+  moveLesson,
+  nextLessonId,
+  packToJson,
+  putLesson,
+  removeLesson,
+  scoreValue,
+  slugify,
+  type CandidateLine,
+  type LessonForm,
+} from './authoring'
+export { AuthorPage, type AuthorPageProps } from './AuthorPage'

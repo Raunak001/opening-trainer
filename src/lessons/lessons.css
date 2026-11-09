@@ -77,3 +77,182 @@
 .lessons__errors ul {
   margin: 4px 0;
 }
+
+/* Sub-navigation: Play / Author / Mine. */
+.lessons-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px 0;
+}
+
+.lessons-tabs button {
+  padding: 6px 12px;
+  border: 1px solid #3c3a37;
+  border-radius: 6px;
+  background: transparent;
+  color: #bababa;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.lessons-tabs button[aria-pressed='true'] {
+  background: #3c3a37;
+  color: #ffffff;
+}
+
+/* Authoring tool: a wider panel beside the board. */
+.author-layout {
+  --panel-width: 420px;
+}
+
+.trainer-layout .author {
+  flex: none;
+  width: var(--panel-width);
+}
+
+.author {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 16px;
+  border-radius: 8px;
+  background: #262421;
+  font-size: 14px;
+}
+
+.author__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.author h2,
+.lessons__panel h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.author label,
+.lessons__panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #bababa;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.author__lines label {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+}
+
+.author input:not([type='checkbox']),
+.author textarea,
+.author select,
+.lessons__panel input:not([type='file']),
+.lessons__panel select,
+.author__json {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #3c3a37;
+  border-radius: 6px;
+  background: #1f1e1c;
+  color: #ffffff;
+  font: inherit;
+}
+
+.author__label {
+  color: #bababa;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.author__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.author__row > label {
+  flex: 1 1 140px;
+}
+
+.author__row--spread {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.author button,
+.lessons__panel button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: #3c3a37;
+  color: #ffffff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.author button:disabled,
+.lessons__panel button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.author__lines,
+.author__accepted,
+.author__pack-lessons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.author__lines li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0;
+  border-bottom: 1px solid #3c3a37;
+}
+
+.author__accepted li,
+.author__pack-lessons li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.author__pack-lessons {
+  padding-left: 0;
+}
+
+.author__error {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #4a2420;
+  list-style: none;
+}
+
+.author__json {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+@media (max-width: 767px) {
+  .trainer-layout .author {
+    width: 100%;
+  }
+}

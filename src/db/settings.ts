@@ -58,6 +58,15 @@ export interface AppSettings {
     /** Coverage gaps report: a missing reply must appear in at least this many games. */
     minGapGames: number
   }
+  /** Concept lessons (Phase 6). */
+  lessons: {
+    /** Stockfish depth for the authoring tool's analysis. */
+    depth: number
+    /** Lines shown by the authoring tool (UCI MultiPV). */
+    multiPv: number
+    /** Moves within this many centipawns of the best are accepted automatically. */
+    acceptWithinCp: number
+  }
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -75,6 +84,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     cardMinGrade: 'mistake',
     minGapGames: 2,
   },
+  lessons: { depth: 18, multiPv: 5, acceptWithinCp: 30 },
 }
 
 export type SettingsPatch = { [K in keyof AppSettings]?: Partial<AppSettings[K]> }
@@ -91,6 +101,7 @@ export function mergeSettings(base: AppSettings, patch: SettingsPatch | undefine
     moveGrading: { ...base.moveGrading, ...patch?.moveGrading },
     playout: { ...base.playout, ...patch?.playout },
     importer: { ...base.importer, ...patch?.importer },
+    lessons: { ...base.lessons, ...patch?.lessons },
   }
 }
 

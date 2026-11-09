@@ -36,6 +36,13 @@ describe('LessonsPage', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('bad.json: broken')
   })
 
+  it('switches to the authoring tool', () => {
+    render(<LessonsPage packs={{ packs: [PACK], errors: [] }} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Author' }))
+    expect(screen.getByRole('complementary', { name: 'Lesson editor' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Author' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
   it('explains where packs come from when there are none', () => {
     render(<LessonsPage packs={{ packs: [], errors: [] }} />)
     expect(screen.getByText(/No packs yet/)).toBeInTheDocument()
