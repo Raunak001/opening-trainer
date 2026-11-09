@@ -40,3 +40,5 @@ export type {
 } from './material'
 export { findForks, forkAt, tacticFindings, tacticFindingsForGrading } from './tactics'
 export type { Fork, ForkTarget, TacticCheckInput, TacticFinding } from './tactics'
+export { DEFAULT_PRINCIPLE_OPTIONS, principleFindings } from './principles'
+export type { PrincipleFinding, PrincipleOptions } from './principles'
