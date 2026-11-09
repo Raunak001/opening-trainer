@@ -1,4 +1,4 @@
-import type { TrainerDB } from './db'
+import type { TimeClass, TrainerDB } from './db'
 
 /**
  * App-wide tunables. CLAUDE.md: grading thresholds live here, not in constants.
@@ -45,6 +45,19 @@ export interface AppSettings {
     /** Search depth for the opponent's moves. */
     depth: number
   }
+  /** chess.com game import (Phase 5). */
+  importer: {
+    /** chess.com username; empty until the user enters one. */
+    username: string
+    /** Time classes whose games are analysed. All are stored. */
+    timeClasses: TimeClass[]
+    /** Only games that ended within this many days can fail or create cards. */
+    autoCardDays: number
+    /** After the opponent leaves book, the user's reply must be at least this bad to make a card. */
+    cardMinGrade: 'inaccuracy' | 'mistake' | 'blunder'
+    /** Coverage gaps report: a missing reply must appear in at least this many games. */
+    minGapGames: number
+  }
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -55,6 +68,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
   // Lichess's judgement thresholds (0.1 / 0.2 / 0.3 winning chances) on the win% scale.
   moveGrading: { depth: 16, inaccuracy: 5, mistake: 10, blunder: 15, sanityCpLoss: 50 },
   playout: { userMoves: 10, skillLevel: 3, depth: 8 },
+  importer: {
+    username: '',
+    timeClasses: ['bullet', 'blitz', 'rapid', 'daily'],
+    autoCardDays: 30,
+    cardMinGrade: 'mistake',
+    minGapGames: 2,
+  },
 }
 
 export type SettingsPatch = { [K in keyof AppSettings]?: Partial<AppSettings[K]> }
@@ -70,6 +90,7 @@ export function mergeSettings(base: AppSettings, patch: SettingsPatch | undefine
     progress: { ...base.progress, ...patch?.progress },
     moveGrading: { ...base.moveGrading, ...patch?.moveGrading },
     playout: { ...base.playout, ...patch?.playout },
+    importer: { ...base.importer, ...patch?.importer },
   }
 }
 

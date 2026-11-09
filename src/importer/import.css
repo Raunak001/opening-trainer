@@ -1,0 +1,204 @@
+/* Import page. Same dark palette as the trainer and builder. */
+.import {
+  --panel-bg: #262421;
+  --panel-raised: #3c3a37;
+  --panel-muted: #bababa;
+  --panel-accent: #81b64c;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+  width: min(960px, 100%);
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.import__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--panel-bg);
+}
+
+.import h1,
+.import h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.import__muted {
+  color: var(--panel-muted);
+  font-size: 13px;
+}
+
+.import__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+}
+
+.import__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--panel-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.import__form input:not([type='checkbox']) {
+  min-width: 200px;
+  padding: 8px 10px;
+  border: 1px solid var(--panel-raised);
+  border-radius: 6px;
+  background: #1f1e1c;
+  color: #ffffff;
+  font: inherit;
+}
+
+.import__checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.import__checks legend {
+  margin-bottom: 4px;
+  padding: 0;
+  color: var(--panel-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.import__checks label {
+  flex-direction: row;
+  align-items: center;
+  color: #ffffff;
+  font-weight: 400;
+}
+
+.import button {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--panel-raised);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.import button:hover:not(:disabled) {
+  background: #4b4946;
+}
+
+.import .import__primary {
+  background: var(--panel-accent);
+}
+
+.import .import__primary:hover:not(:disabled) {
+  background: #a3d160;
+}
+
+.import button:disabled {
+  color: var(--panel-muted);
+  cursor: default;
+}
+
+.import button:focus-visible,
+.import input:focus-visible,
+.import a:focus-visible {
+  outline: 2px solid var(--panel-accent);
+  outline-offset: 2px;
+}
+
+.import a {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.import__ok {
+  color: var(--panel-accent);
+}
+
+.import__error {
+  color: #fa8072;
+}
+
+.import__games,
+.import__gaps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* date | game | deviation */
+.import__game {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) minmax(0, 1.4fr);
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.import__game:hover,
+.import__gap:hover {
+  background: #2f2d2a;
+}
+
+.import__dev--user {
+  color: #fa8072;
+}
+
+.import__dev--opponent {
+  color: #f0c15c;
+}
+
+/* move | count | action */
+.import__gap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+
+.import__gap-moves {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.import__gap-moves > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .import__game {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .import__gap {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .import__gap > button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}

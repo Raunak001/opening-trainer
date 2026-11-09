@@ -53,10 +53,12 @@ describe('schema', () => {
   it('has every table from the plan, with cards indexed on due', async () => {
     const db = new TrainerDB(dbName())
     await db.open()
-    expect(db.verno).toBe(3)
+    expect(db.verno).toBe(4)
     expect(db.tables.map((t) => t.name).sort()).toEqual(
       [
+        'archives',
         'cards',
+        'games',
         'evalCache',
         'explorerCache',
         'nodes',
@@ -73,7 +75,7 @@ describe('schema', () => {
 })
 
 describe('migrations', () => {
-  it('upgrades v1 to v3 keeping the explorer cache', async () => {
+  it('upgrades v1 to v4 keeping the explorer cache', async () => {
     const name = dbName()
     const v1 = new Dexie(name)
     v1.version(1).stores({ explorerCache: 'key, positionKey' })
@@ -88,7 +90,31 @@ describe('migrations', () => {
 
     const db = new TrainerDB(name)
     expect(await db.explorerCache.get('k')).toMatchObject({ positionKey: 'p', fetchedAt: 1 })
-    expect(db.verno).toBe(3)
+    expect(db.verno).toBe(4)
+    db.close()
+  })
+
+  it('upgrades v3 to v4 keeping cards and adding the game tables', async () => {
+    const name = dbName()
+    const v3 = new Dexie(name)
+    v3.version(3).stores({
+      explorerCache: 'key, positionKey',
+      repertoires: 'id, name, updatedAt',
+      nodes: 'id, repertoireId',
+      cards: 'id, repertoireId, due, [repertoireId+due]',
+      reviewLogs: '++id, cardId, repertoireId, review',
+      settings: 'id',
+      evalCache: 'key, positionKey',
+    })
+    await v3
+      .table('cards')
+      .put({ id: 'r:k', repertoireId: 'r', positionKey: 'k', due: new Date(1) })
+    v3.close()
+
+    const db = new TrainerDB(name)
+    expect(await db.cards.get('r:k')).toMatchObject({ positionKey: 'k' })
+    expect(await db.games.count()).toBe(0)
+    expect(db.games.schema.idxByName.endTime).toBeDefined()
     db.close()
   })
 

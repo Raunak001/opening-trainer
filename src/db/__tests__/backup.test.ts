@@ -70,10 +70,31 @@ async function populated() {
     pv: ['e2e4', 'e7e5'],
     createdAt: 456,
   })
+  await db.archives.put({
+    id: 'me/2026/10',
+    username: 'me',
+    month: '2026/10',
+    fetchedAt: 789,
+    complete: true,
+    gameCount: 1,
+  })
+  await db.games.put({
+    id: 'https://www.chess.com/game/live/1',
+    username: 'me',
+    archiveId: 'me/2026/10',
+    endTime: 1_790_000_000_000,
+    timeClass: 'blitz',
+    color: 'white',
+    opponent: 'Rival',
+    result: 'win',
+    pgn: '1. e4 e5 1-0',
+    sans: ['e4', 'e5'],
+    cards: { processedAt: 1, outcome: 'none' },
+  })
   return { db, rep }
 }
 
-const roundTrip = async (backup: Backup, schema = 3) => parseBackup(serializeBackup(backup), schema)
+const roundTrip = async (backup: Backup, schema = 4) => parseBackup(serializeBackup(backup), schema)
 
 describe('export and restore', () => {
   it('round-trips every table exactly, Dates included', async () => {
@@ -87,6 +108,8 @@ describe('export and restore', () => {
       settings: 1,
       explorerCache: 1,
       evalCache: 1,
+      archives: 1,
+      games: 1,
     })
 
     const target = openDb()
@@ -160,7 +183,7 @@ describe('parseBackup rejects files it cannot restore', () => {
   const valid = async () => JSON.parse(serializeBackup(await exportBackup(openDb(), T0)))
   const reason = (text: string) => {
     try {
-      parseBackup(text, 3)
+      parseBackup(text, 4)
       return 'accepted'
     } catch (err) {
       expect(err).toBeInstanceOf(BackupError)
@@ -185,7 +208,10 @@ describe('parseBackup rejects files it cannot restore', () => {
       'Unsupported backup format version 2.',
     )
     expect(reason(JSON.stringify({ ...(await valid()), schemaVersion: 2 }))).toBe(
-      'This backup is from database version 2; this app uses version 3.',
+      'This backup is from database version 2; this app uses version 4.',
+    )
+    expect(reason(JSON.stringify({ ...(await valid()), schemaVersion: 5 }))).toBe(
+      'This backup is from database version 5; this app uses version 4.',
     )
   })
 
@@ -199,6 +225,23 @@ describe('parseBackup rejects files it cannot restore', () => {
     expect(reason(JSON.stringify(noCards))).toBe('The backup is missing the "cards" table.')
     const badRow = { ...v, tables: { ...v.tables, cards: [{ due: 1 }] } }
     expect(reason(JSON.stringify(badRow))).toBe('Row 1 of "cards" has no "id".')
+  })
+
+  it('restores a version 3 backup, which has no game tables', async () => {
+    const { db: source } = await populated()
+    const v = JSON.parse(serializeBackup(await exportBackup(source, T0)))
+    v.schemaVersion = 3
+    delete v.tables.archives
+    delete v.tables.games
+    const backup = parseBackup(JSON.stringify(v), 4)
+    expect(backup.tables.games).toEqual([])
+    const target = openDb()
+    const counts = await restoreBackup(target, backup)
+    expect(counts.cards).toBe(2)
+    expect(await target.games.count()).toBe(0)
+    // A table the old schema had is still required.
+    delete v.tables.cards
+    expect(reason(JSON.stringify(v))).toBe('The backup is missing the "cards" table.')
   })
 
   it('restoreBackup refuses a schema mismatch', async () => {

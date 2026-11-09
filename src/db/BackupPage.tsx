@@ -28,6 +28,8 @@ const TABLE_LABELS: Record<BackupTable, string> = {
   settings: 'Settings',
   explorerCache: 'Cached explorer answers',
   evalCache: 'Cached engine evaluations',
+  archives: 'chess.com months fetched',
+  games: 'Imported games',
 }
 
 /** Default file saver: a temporary download link. */

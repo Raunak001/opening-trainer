@@ -12,6 +12,8 @@ export const BACKUP_TABLES = [
   'settings',
   'explorerCache',
   'evalCache',
+  'archives',
+  'games',
 ] as const
 
 export type BackupTable = (typeof BACKUP_TABLES)[number]
@@ -25,7 +27,15 @@ const PRIMARY_KEY: Record<BackupTable, string> = {
   settings: 'id',
   explorerCache: 'key',
   evalCache: 'key',
+  archives: 'id',
+  games: 'id',
 }
+
+/** Schema version that introduced each table. Older backups restore with those tables empty. */
+const TABLE_SINCE: Partial<Record<BackupTable, number>> = { archives: 4, games: 4 }
+
+/** Oldest schema version whose backups still restore (later versions only added tables). */
+export const MIN_BACKUP_SCHEMA = 3
 
 export interface Backup {
   format: typeof BACKUP_FORMAT
@@ -108,7 +118,11 @@ export function parseBackup(text: string, currentSchemaVersion: number): Backup 
     throw new BackupError('This is not an Opening Trainer backup.')
   if (data.version !== BACKUP_VERSION)
     throw new BackupError(`Unsupported backup format version ${String(data.version)}.`)
-  if (data.schemaVersion !== currentSchemaVersion)
+  if (
+    typeof data.schemaVersion !== 'number' ||
+    data.schemaVersion < MIN_BACKUP_SCHEMA ||
+    data.schemaVersion > currentSchemaVersion
+  )
     throw new BackupError(
       `This backup is from database version ${String(data.schemaVersion)}; ` +
         `this app uses version ${currentSchemaVersion}.`,
@@ -118,7 +132,8 @@ export function parseBackup(text: string, currentSchemaVersion: number): Backup 
 
   const tables = {} as Backup['tables']
   for (const name of BACKUP_TABLES) {
-    const rows = data.tables[name]
+    const schemaVersion = data.schemaVersion
+    const rows = data.tables[name] ?? ((TABLE_SINCE[name] ?? 0) > schemaVersion ? [] : undefined)
     if (!Array.isArray(rows)) throw new BackupError(`The backup is missing the "${name}" table.`)
     const pk = PRIMARY_KEY[name]
     rows.forEach((row, i) => {
@@ -130,7 +145,8 @@ export function parseBackup(text: string, currentSchemaVersion: number): Backup 
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
-    schemaVersion: data.schemaVersion,
+    // Rows from older schemas are valid as is (later versions only added tables).
+    schemaVersion: currentSchemaVersion,
     exportedAt: data.exportedAt,
     tables,
   }
@@ -146,7 +162,7 @@ export function backupCounts(backup: Backup): BackupCounts {
  */
 export async function restoreBackup(db: TrainerDB, backup: Backup): Promise<BackupCounts> {
   await db.open()
-  if (backup.schemaVersion !== db.verno)
+  if (backup.schemaVersion < MIN_BACKUP_SCHEMA || backup.schemaVersion > db.verno)
     throw new BackupError(
       `Backup is for database version ${backup.schemaVersion}, not ${db.verno}.`,
     )

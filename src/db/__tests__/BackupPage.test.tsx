@@ -42,7 +42,7 @@ describe('BackupPage', () => {
     expect(await screen.findByText('Backup saved.', {}, WAIT)).toBeInTheDocument()
     const [name, text] = saveFile.mock.calls[0]
     expect(name).toMatch(/^opening-trainer-backup-\d{4}-\d{2}-\d{2}\.json$/)
-    expect(parseBackup(text, 3).tables.settings).toMatchObject([{ daily: { newCards: 3 } }])
+    expect(parseBackup(text, 4).tables.settings).toMatchObject([{ daily: { newCards: 3 } }])
   })
 
   it('shows what a file contains and restores only after confirmation', async () => {
@@ -62,7 +62,7 @@ describe('BackupPage', () => {
 
     fireEvent.click(dialog.getByRole('button', { name: 'Save current data first' }))
     await waitFor(() => expect(saveFile).toHaveBeenCalledOnce())
-    expect(parseBackup(saveFile.mock.calls[0][1], 3).tables.settings).toMatchObject([
+    expect(parseBackup(saveFile.mock.calls[0][1], 4).tables.settings).toMatchObject([
       { daily: { newCards: 1 } },
     ])
     expect(await dialog.findByRole('button', { name: 'Current data saved' })).toBeDisabled()
