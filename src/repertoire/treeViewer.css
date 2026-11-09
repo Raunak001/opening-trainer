@@ -246,3 +246,21 @@
     margin-left: 8px;
   }
 }
+
+.tree-viewer__badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tree-viewer__badge--warn {
+  background: #e58f2a;
+}
+.tree-viewer__check ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--panel-text);
+  font-size: 13px;
+}
+.tree-viewer__check-move {
+  font-weight: 700;
+}

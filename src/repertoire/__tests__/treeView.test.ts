@@ -10,6 +10,7 @@ import {
   moveLabel,
   overrideCandidates,
   resultSplit,
+  userMoves,
   withOverride,
 } from '../treeView'
 import { keyAfter, world } from './fakeWorld'
@@ -139,5 +140,21 @@ describe('withOverride', () => {
     expect(two).toEqual({ k1: 'Bc4', k2: 'c3' })
     expect(withOverride(two, 'k1', 'Nf3', 'Nf3')).toEqual({ k2: 'c3' })
     expect(one).toEqual({ k1: 'Bc4' }) // inputs untouched
+  })
+})
+
+describe('userMoves', () => {
+  it("lists the user's moves, shallowest first, with each position's FEN", () => {
+    let tree = createTree()
+    tree = addLine(tree, 'e4 e5 Nf3 Nc6')
+    tree = addLine(tree, 'e4 c5 c3')
+    const moves = userMoves(tree, 'white')
+    expect(moves.map((m) => m.san)).toEqual(['e4', 'Nf3', 'c3'])
+    expect(moves[0].fen).toBe('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+    expect(
+      userMoves(tree, 'black')
+        .map((m) => m.san)
+        .sort(),
+    ).toEqual(['Nc6', 'c5', 'e5'])
   })
 })

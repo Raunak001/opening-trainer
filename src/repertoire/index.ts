@@ -107,10 +107,12 @@ export {
   moveLabel,
   overrideCandidates,
   resultSplit,
+  userMoves,
   withOverride,
   type Candidate,
   type EdgeView,
   type ResultSplit,
+  type UserMove,
 } from './treeView'
 export { shortestParent } from './tree'
 export { TreeViewer, type TreeViewerProps } from './TreeViewer'

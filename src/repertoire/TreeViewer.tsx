@@ -1,6 +1,14 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { getDb, type TrainerDB } from '../db'
+import { getDb, getSettings, type TrainerDB } from '../db'
+import {
+  checkRepertoireMoves,
+  dexieEvalCache,
+  formatScore,
+  getSharedEngine,
+  type Engine,
+  type SanityFlag,
+} from '../engine'
 import { syncCards } from '../srs'
 import {
   buildAndSave,
@@ -22,6 +30,7 @@ import {
   formatPercent,
   moveLabel,
   overrideCandidates,
+  userMoves as listUserMoves,
   withOverride,
   type Candidate,
   type EdgeView,
@@ -31,6 +40,8 @@ import './treeViewer.css'
 export interface TreeViewerProps {
   db?: TrainerDB
   client?: ExplorerClient
+  /** Engine for the sanity check; defaults to the app's shared Stockfish worker. */
+  engine?: () => Engine
 }
 
 /** Initial expansion depth in plies. */
@@ -42,12 +53,20 @@ type RebuildStatus =
   | { kind: 'done'; message: string }
   | { kind: 'error'; message: string }
 
+type CheckState =
+  | { kind: 'idle' }
+  | { kind: 'running'; done: number; total: number }
+  | { kind: 'done'; flags: SanityFlag[]; checked: number; maxCpLoss: number }
+  | { kind: 'error'; message: string }
+
+const flagKey = (key: PositionKey, san: string) => `${key}|${san}`
+
 type SwapState =
   | { key: PositionKey; kind: 'loading' }
   | { key: PositionKey; kind: 'ready'; candidates: Candidate[] }
   | { key: PositionKey; kind: 'error'; message: string }
 
-export function TreeViewer({ db: dbProp, client: clientProp }: TreeViewerProps) {
+export function TreeViewer({ db: dbProp, client: clientProp, engine }: TreeViewerProps) {
   const db = dbProp ?? getDb()
   const client = clientProp ?? null
   const rows = useLiveQuery(() => listRepertoires(db), [db])
@@ -83,7 +102,13 @@ export function TreeViewer({ db: dbProp, client: clientProp }: TreeViewerProps) 
       </header>
       {/* Keyed so expansion and open panels reset when switching repertoires. */}
       {repertoire?.id === row.id && (
-        <RepertoireTree key={row.id} row={repertoire} db={db} client={client} />
+        <RepertoireTree
+          key={row.id}
+          row={repertoire}
+          db={db}
+          client={client}
+          engine={engine ?? getSharedEngine}
+        />
       )}
     </main>
   )
@@ -93,10 +118,12 @@ function RepertoireTree({
   row,
   db,
   client,
+  engine,
 }: {
   row: Repertoire
   db: TrainerDB
   client: ExplorerClient | null
+  engine: () => Engine
 }) {
   const tree = row.tree
   const [expanded, setExpanded] = useState(() => expandedToPly(tree, INITIAL_PLY))
@@ -104,9 +131,46 @@ function RepertoireTree({
   const [swap, setSwap] = useState<SwapState>()
   const [status, setStatus] = useState<RebuildStatus>({ kind: 'idle' })
   const abortRef = useRef<AbortController | null>(null)
+  const [check, setCheck] = useState<CheckState>({ kind: 'idle' })
+  const checkAbort = useRef<AbortController | null>(null)
   const overrides = useMemo(() => row.overrides ?? {}, [row.overrides])
 
-  useEffect(() => () => abortRef.current?.abort(), [])
+  useEffect(
+    () => () => {
+      abortRef.current?.abort()
+      checkAbort.current?.abort()
+    },
+    [],
+  )
+
+  async function runCheck() {
+    const controller = new AbortController()
+    checkAbort.current = controller
+    const moves = listUserMoves(tree, row.color)
+    setCheck({ kind: 'running', done: 0, total: moves.length })
+    try {
+      const { moveGrading } = await getSettings(db)
+      const flags = await checkRepertoireMoves(engine(), dexieEvalCache(db), moves, {
+        depth: moveGrading.depth,
+        maxCpLoss: moveGrading.sanityCpLoss,
+        signal: controller.signal,
+        onProgress: (done, total) => setCheck({ kind: 'running', done, total }),
+      })
+      setCheck({ kind: 'done', flags, checked: moves.length, maxCpLoss: moveGrading.sanityCpLoss })
+    } catch (err) {
+      if (controller.signal.aborted) setCheck({ kind: 'idle' })
+      else setCheck({ kind: 'error', message: err instanceof Error ? err.message : String(err) })
+    } finally {
+      checkAbort.current = null
+    }
+  }
+
+  const flags = useMemo(() => {
+    const map = new Map<string, SanityFlag>()
+    if (check.kind === 'done')
+      for (const f of check.flags) map.set(flagKey(f.positionKey, f.san), f)
+    return map
+  }, [check])
 
   useEffect(() => {
     let live = true
@@ -227,10 +291,18 @@ function RepertoireTree({
               Reset changes
             </button>
           )}
+          <button
+            type="button"
+            disabled={building || check.kind === 'running'}
+            onClick={() => void runCheck()}
+          >
+            Check with engine
+          </button>
         </div>
       </div>
 
       <RebuildStatusLine status={status} onCancel={() => abortRef.current?.abort()} />
+      <CheckSummary check={check} tree={tree} onCancel={() => checkAbort.current?.abort()} />
 
       <div className="tree-viewer__tree" aria-busy={building}>
         <div className="tree-viewer__root">
@@ -248,6 +320,7 @@ function RepertoireTree({
             toggle,
             openSwap,
             choose,
+            flags,
           }}
         />
       </div>
@@ -265,6 +338,8 @@ interface TreeContext {
   toggle: (key: PositionKey) => void
   openSwap: (key: PositionKey) => void
   choose: (key: PositionKey, candidate: Candidate, candidates: Candidate[]) => void
+  /** Sanity-check flags by `${positionKey}|${san}`. */
+  flags: Map<string, SanityFlag>
 }
 
 function Children({ parentKey, ctx }: { parentKey: PositionKey; ctx: TreeContext }) {
@@ -297,6 +372,7 @@ function EdgeRow({
   const label = ctx.labels[child.key]
   const changed = yours && ctx.overrides[parentKey] === view.edge.san
   const swapHere = ctx.swap?.key === parentKey
+  const flag = yours ? ctx.flags.get(flagKey(parentKey, view.edge.san)) : undefined
 
   return (
     <li className={yours ? 'tree-viewer__item is-yours' : 'tree-viewer__item'}>
@@ -322,7 +398,17 @@ function EdgeRow({
               ? `${label.opening.eco} ${label.opening.name}`
               : ''}
         </span>
-        <span>{changed && <span className="tree-viewer__badge">your choice</span>}</span>
+        <span className="tree-viewer__badges">
+          {changed && <span className="tree-viewer__badge">your choice</span>}
+          {flag && (
+            <span
+              className="tree-viewer__badge tree-viewer__badge--warn"
+              title={`Engine: ${flag.san} ${formatScore(flag.playedScore)}, best ${flag.bestSan} ${formatScore(flag.bestScore)}`}
+            >
+              −{(flag.cpLoss / 100).toFixed(1)} vs {flag.bestSan}
+            </span>
+          )}
+        </span>
         <span className="tree-viewer__stat" title={`${view.games.toLocaleString()} games`}>
           {formatGames(view.games)}
         </span>
@@ -427,6 +513,56 @@ function RebuildStatusLine({ status, onCancel }: { status: RebuildStatus; onCanc
       {status.kind === 'error' && (
         <span className="tree-viewer__error">Rebuild failed: {status.message}</span>
       )}
+    </div>
+  )
+}
+
+function CheckSummary({
+  check,
+  tree,
+  onCancel,
+}: {
+  check: CheckState
+  tree: Repertoire['tree']
+  onCancel: () => void
+}) {
+  if (check.kind === 'idle') return null
+  if (check.kind === 'running')
+    return (
+      <p className="tree-viewer__muted" role="status">
+        Checking your moves with Stockfish: {check.done}/{check.total}…{' '}
+        <button type="button" onClick={onCancel}>
+          Cancel
+        </button>
+      </p>
+    )
+  if (check.kind === 'error')
+    return <p className="tree-viewer__error">Engine check failed: {check.message}</p>
+  const limit = (check.maxCpLoss / 100).toFixed(1)
+  if (check.flags.length === 0)
+    return (
+      <p className="tree-viewer__muted" role="status">
+        All {check.checked} of your moves are within {limit} pawns of the engine&apos;s best.
+      </p>
+    )
+  return (
+    <div className="tree-viewer__check" role="status">
+      <p className="tree-viewer__muted">
+        {check.flags.length} of your {check.checked} moves lose more than {limit} pawns against the
+        engine&apos;s best. Use Change to pick another.
+      </p>
+      <ul>
+        {check.flags.map((f) => {
+          const ply = tree.nodes[f.positionKey]?.ply ?? 0
+          return (
+            <li key={flagKey(f.positionKey, f.san)}>
+              <span className="tree-viewer__check-move">{moveLabel(ply, f.san)}</span>{' '}
+              {formatScore(f.playedScore)} · best {moveLabel(ply, f.bestSan)}{' '}
+              {formatScore(f.bestScore)}
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

@@ -33,6 +33,8 @@ export interface AppSettings {
     mistake: number
     /** Losing at least this much win% → blunder. */
     blunder: number
+    /** Repertoire sanity check: flag chosen moves losing more than this many centipawns. */
+    sanityCpLoss: number
   }
 }
 
@@ -42,7 +44,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   daily: { newCards: 20, reviews: 200 },
   progress: { masteredAfterDays: 21 },
   // Lichess's judgement thresholds (0.1 / 0.2 / 0.3 winning chances) on the win% scale.
-  moveGrading: { depth: 16, inaccuracy: 5, mistake: 10, blunder: 15 },
+  moveGrading: { depth: 16, inaccuracy: 5, mistake: 10, blunder: 15, sanityCpLoss: 50 },
 }
 
 export type SettingsPatch = { [K in keyof AppSettings]?: Partial<AppSettings[K]> }

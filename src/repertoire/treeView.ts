@@ -177,3 +177,20 @@ export function formatGames(n: number): string {
   }
   return String(n)
 }
+
+/** One of the user's chosen moves, for the engine sanity check. */
+export interface UserMove {
+  positionKey: PositionKey
+  fen: string
+  san: string
+}
+
+/** Every move the user plays in the tree, shallowest first. */
+export function userMoves(tree: RepertoireTree, userColor: Color): UserMove[] {
+  return Object.values(tree.nodes)
+    .filter((node) => sideToMove(node.key) === userColor)
+    .sort((a, b) => a.ply - b.ply)
+    .flatMap((node) =>
+      node.edges.map((edge) => ({ positionKey: node.key, fen: node.fen, san: edge.san })),
+    )
+}

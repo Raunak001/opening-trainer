@@ -1,7 +1,10 @@
 import 'fake-indexeddb/auto'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { Chess } from 'chess.js'
 import { TrainerDB } from '../../db'
+import { stubEngine } from '../../engine/__tests__/stubEngine'
+import { positionKey } from '../positionKey'
 import { buildAndSave } from '../builder'
 import { DEFAULT_PRUNE_SETTINGS } from '../prune'
 import { TreeViewer } from '../TreeViewer'
@@ -35,6 +38,23 @@ afterEach(async () => {
   db = undefined
 })
 
+const fenAfter = (sans: string[]) => {
+  const chess = new Chess()
+  for (const san of sans) chess.move(san)
+  return chess.fen()
+}
+
+/** Engine prefers 2.Bc4 to the repertoire's 2.Nf3 by 0.9 pawns; everything else is the engine move. */
+function sanityEngine() {
+  const at = (sans: string[]) => positionKey(fenAfter(sans))
+  return stubEngine({
+    [at([])]: { score: { type: 'cp', value: 30 }, pv: ['e2e4'] },
+    [at(['e4', 'e5'])]: { score: { type: 'cp', value: 60 }, pv: ['f1c4'] },
+    [at(['e4', 'e5', 'Nf3'])]: { score: { type: 'cp', value: 30 }, pv: ['b8c6'] },
+    [at(['e4', 'c5'])]: { score: { type: 'cp', value: 25 }, pv: ['c2c3'] },
+  })
+}
+
 async function setup(overrides: Record<string, string> = {}) {
   db = new TrainerDB(`tree-viewer-${++n}`)
   const fake = fakeClient(WORLD)
@@ -48,9 +68,10 @@ async function setup(overrides: Record<string, string> = {}) {
     overrides,
     client: fake.client,
   })
-  render(<TreeViewer db={db} client={fake.client} />)
+  const sanity = sanityEngine()
+  render(<TreeViewer db={db} client={fake.client} engine={() => sanity.engine} />)
   await screen.findByText('Start position')
-  return { db, fake }
+  return { db, fake, sanity }
 }
 
 const row = (label: string) => {
@@ -149,5 +170,47 @@ describe('TreeViewer', () => {
     await waitFor(() => expect(row('2.Nf3')).toBeInTheDocument())
     expect(screen.queryByRole('button', { name: 'Reset changes' })).not.toBeInTheDocument()
     expect((await database.repertoires.toArray())[0].overrides).toEqual({})
+  })
+
+  it('checks the chosen moves with the engine and flags the bad one', async () => {
+    const { sanity } = await setup()
+    fireEvent.click(screen.getByRole('button', { name: 'Check with engine' }))
+    expect(
+      await screen.findByText(
+        "1 of your 3 moves lose more than 0.5 pawns against the engine's best. Use Change to pick another.",
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByText('-0.3 · best 2.Bc4 +0.6', { exact: false })).toBeInTheDocument()
+    expect(row('2.Nf3')).toHaveTextContent('−0.9 vs Bc4')
+    expect(row('2.c3')).not.toHaveTextContent('vs')
+    // Engine moves need one search each; the flagged move needs two.
+    expect(sanity.searched).toHaveLength(4)
+  })
+
+  it('shows engine errors', async () => {
+    db = new TrainerDB(`tree-viewer-${++n}`)
+    const fake = fakeClient(WORLD)
+    await buildAndSave(db, {
+      name: 'Test 1.e4',
+      color: 'white',
+      startMoves: ['e4'],
+      speeds: ['blitz'],
+      ratings: [1600],
+      settings: SETTINGS,
+      client: fake.client,
+    })
+    render(
+      <TreeViewer
+        db={db}
+        client={fake.client}
+        engine={() => {
+          throw new Error('Web Workers are not available')
+        }}
+      />,
+    )
+    fireEvent.click(await screen.findByRole('button', { name: 'Check with engine' }))
+    expect(
+      await screen.findByText('Engine check failed: Web Workers are not available'),
+    ).toBeInTheDocument()
   })
 })
