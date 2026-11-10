@@ -1,7 +1,7 @@
 import type { DrawShape } from 'chessground/draw'
 import type { Key, SquareClasses } from 'chessground/types'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Board } from '../board'
 import { getDb, getSettings, type AppSettings, type GameRow, type TrainerDB } from '../db'
 import type { Engine } from '../engine/engine'
@@ -144,12 +144,30 @@ export function GameReview({ game, onBack, db: dbProp, engine: engineProp }: Gam
     [review, mine, ply, go],
   )
 
-  const onKeyDown = (e: KeyboardEvent) => {
-    const map: Record<string, number> = { ArrowLeft: ply - 1, ArrowRight: ply + 1, Home: 0, End: n }
-    if (!(e.key in map)) return
-    e.preventDefault()
-    go(map[e.key])
-  }
+  // ← → (and Home/End) step through the game from anywhere on the page, not only the board.
+  useEffect(() => {
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.defaultPrevented) return
+      const target = e.target
+      if (
+        target instanceof Element &&
+        target.closest('input, textarea, select, [contenteditable="true"]')
+      )
+        return
+      const step: Record<string, (p: number) => number> = {
+        ArrowLeft: (p) => p - 1,
+        ArrowRight: (p) => p + 1,
+        Home: () => 0,
+        End: () => n,
+      }
+      const next = step[e.key]
+      if (!next) return
+      e.preventDefault()
+      setPly((p) => Math.max(0, Math.min(n, next(p))))
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [n])
 
   const current: MoveReview | undefined = review && ply > 0 ? review.moves[ply - 1] : undefined
   const lastMove: [Key, Key] | undefined = useMemo(() => {
@@ -206,8 +224,6 @@ export function GameReview({ game, onBack, db: dbProp, engine: engineProp }: Gam
       <section
         className={`game-review__board game-review__board--${game.color}`}
         aria-label="Board"
-        tabIndex={0}
-        onKeyDown={onKeyDown}
       >
         <div className="eval-bar" aria-label={`Evaluation ${evalText}`}>
           <div className="eval-bar__white" style={{ height: `${whiteWin}%` }} />
