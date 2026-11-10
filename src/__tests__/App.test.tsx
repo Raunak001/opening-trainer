@@ -25,6 +25,7 @@ describe('App', () => {
       'Library',
       'Practice all',
       'Puzzles',
+      'Coordinates',
       'Lessons',
       'Progress',
       'Import',

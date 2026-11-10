@@ -139,5 +139,5 @@ Goal: learn the board's coordinates until square names are automatic, from both 
 
 - [x] **T10.1 Coordinate logic** (S) — `src/coordinates/`: squares and square colour, weighted square picking, per-square stat updates, heatmap scores, visualization questions (square colour, same diagonal, knight/bishop reach), Play-the-move prompts from cards. Done when: unit tests cover each.
 - [x] **T10.2 Storage** (S) — Dexie v7 `coordStats` and `coordRuns` (new tables, no-op upgrade), added to backup/restore, `settings.coordinates`. Done when: db and backup tests cover the new tables.
-- [ ] **T10.3 Coordinates tab** (M) — the four drills on a coordinate-free board, view toggle (White/Black), live score and timer, best scores per drill and view. Done when: each drill runs a full round in the app and saves its stats.
+- [x] **T10.3 Coordinates tab** (M) — the four drills on a coordinate-free board, view toggle (White/Black), live score and timer, best scores per drill and view. Done when: each drill runs a full round in the app and saves its stats.
 - [ ] **T10.4 Square heatmap** (S) — 8×8 heatmap of accuracy and speed from your stats, from either side, on the Coordinates tab and the Progress page. Done when: renders after a few rounds and shows weak squares.

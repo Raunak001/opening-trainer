@@ -39,6 +39,8 @@ export interface BoardProps {
   squareClasses?: SquareClasses
   /** Move sounds when the position advances by one legal move. On by default. */
   sounds?: boolean
+  /** Square names along the edges. On by default; read at mount only (remount to change). */
+  coordinates?: boolean
 }
 
 const EMPTY_SHAPES: DrawShape[] = []
@@ -76,6 +78,7 @@ export function Board({
   interactive = true,
   squareClasses = NO_CLASSES,
   sounds = true,
+  coordinates = true,
 }: BoardProps) {
   const elRef = useRef<HTMLDivElement>(null)
   const apiRef = useRef<Api | null>(null)
@@ -102,6 +105,7 @@ export function Board({
     const animator = createAnimator()
     animatorRef.current = animator
     const api = Chessground(el, {
+      coordinates,
       animation: { enabled: false },
       movable: {
         free: false,
@@ -134,6 +138,7 @@ export function Board({
       apiRef.current = null
       animatorRef.current = null
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- coordinates are mount-only.
   }, [])
 
   // Also re-runs when the picker closes, which restores the position after a cancel.

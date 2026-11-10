@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { SoundToggle } from './board/SoundToggle'
+import { CoordinatesPage } from './coordinates/CoordinatesPage'
 // Not re-exported from the db index, which pure code imports: keep React out of it.
 import { BackupPage } from './db/BackupPage'
 import { ImportPage } from './importer'
@@ -10,13 +11,22 @@ import { BuilderPage, TreeViewer } from './repertoire'
 import { CoursePage, LibraryPage, ProgressPage, ReviewPage } from './trainer'
 
 type View =
-  'library' | 'practice' | 'puzzles' | 'lessons' | 'progress' | 'import' | 'backup' | 'advanced'
+  | 'library'
+  | 'practice'
+  | 'puzzles'
+  | 'coordinates'
+  | 'lessons'
+  | 'progress'
+  | 'import'
+  | 'backup'
+  | 'advanced'
 type AdvancedView = 'build' | 'tree'
 
 const VIEWS: { id: View; label: string }[] = [
   { id: 'library', label: 'Library' },
   { id: 'practice', label: 'Practice all' },
   { id: 'puzzles', label: 'Puzzles' },
+  { id: 'coordinates', label: 'Coordinates' },
   { id: 'lessons', label: 'Lessons' },
   { id: 'progress', label: 'Progress' },
   { id: 'import', label: 'Import' },
@@ -75,6 +85,7 @@ function App() {
         ))}
       {view === 'practice' && <ReviewPage />}
       {view === 'puzzles' && <PuzzlesPage />}
+      {view === 'coordinates' && <CoordinatesPage />}
       {view === 'progress' && <ProgressPage onStartReview={() => setView('practice')} />}
       {view === 'lessons' && <LessonsPage />}
       {view === 'import' && <ImportPage />}
