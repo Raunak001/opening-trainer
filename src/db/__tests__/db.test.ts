@@ -53,7 +53,7 @@ describe('schema', () => {
   it('has every table from the plan, with cards indexed on due', async () => {
     const db = new TrainerDB(dbName())
     await db.open()
-    expect(db.verno).toBe(4)
+    expect(db.verno).toBe(5)
     expect(db.tables.map((t) => t.name).sort()).toEqual(
       [
         'archives',
@@ -62,6 +62,8 @@ describe('schema', () => {
         'evalCache',
         'explorerCache',
         'nodes',
+        'puzzleAttempts',
+        'puzzles',
         'repertoires',
         'reviewLogs',
         'settings',
@@ -75,7 +77,7 @@ describe('schema', () => {
 })
 
 describe('migrations', () => {
-  it('upgrades v1 to v4 keeping the explorer cache', async () => {
+  it('upgrades v1 to v5 keeping the explorer cache', async () => {
     const name = dbName()
     const v1 = new Dexie(name)
     v1.version(1).stores({ explorerCache: 'key, positionKey' })
@@ -90,7 +92,7 @@ describe('migrations', () => {
 
     const db = new TrainerDB(name)
     expect(await db.explorerCache.get('k')).toMatchObject({ positionKey: 'p', fetchedAt: 1 })
-    expect(db.verno).toBe(4)
+    expect(db.verno).toBe(5)
     db.close()
   })
 
@@ -115,6 +117,37 @@ describe('migrations', () => {
     expect(await db.cards.get('r:k')).toMatchObject({ positionKey: 'k' })
     expect(await db.games.count()).toBe(0)
     expect(db.games.schema.idxByName.endTime).toBeDefined()
+    db.close()
+  })
+
+  it('upgrades v4 to v5 keeping games and adding the puzzle tables', async () => {
+    const name = dbName()
+    const v4 = new Dexie(name)
+    v4.version(4).stores({
+      explorerCache: 'key, positionKey',
+      repertoires: 'id, name, updatedAt',
+      nodes: 'id, repertoireId',
+      cards: 'id, repertoireId, due, [repertoireId+due]',
+      reviewLogs: '++id, cardId, repertoireId, review',
+      settings: 'id',
+      evalCache: 'key, positionKey',
+      archives: 'id, username',
+      games: 'id, username, endTime, archiveId',
+    })
+    await v4.table('games').put({ id: 'g1', username: 'me', endTime: 1, archiveId: 'a' })
+    await v4
+      .table('cards')
+      .put({ id: 'r:k', repertoireId: 'r', positionKey: 'k', due: new Date(1) })
+    v4.close()
+
+    const db = new TrainerDB(name)
+    expect(await db.games.get('g1')).toMatchObject({ username: 'me' })
+    expect(await db.cards.get('r:k')).toMatchObject({ positionKey: 'k' })
+    expect(await db.puzzles.count()).toBe(0)
+    expect(await db.puzzleAttempts.count()).toBe(0)
+    expect(db.puzzles.schema.idxByName.rating).toBeDefined()
+    expect(db.puzzleAttempts.schema.idxByName.at).toBeDefined()
+    expect(db.verno).toBe(5)
     db.close()
   })
 

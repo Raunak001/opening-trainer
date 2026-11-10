@@ -114,3 +114,11 @@ Today's problems this fixes: the Drill tab is stuck on hardcoded sample lines (I
 - [x] **T7.9 Systems** (M) — forced user moves for a course ("always Bf4 when legal") applied as overrides during the build, enabling London / KIA style entries. Add London and KIA to the catalog. Done when: London course plays Bf4 against both 1…d5 and 1…Nf6.
 - [x] **T7.10 Chapters** (M) — group a course's lines into chapters by variation, like a course library: chapter = the line's opening name at variation level (`Family: Variation`, sub-variations after the comma dropped); lines named only by the family go to "Other lines". Chapters ordered by how often you meet them. Course page shows each chapter with its lines, learned/total, a progress bar and its own Learn button (next unlearned line in that chapter). Done when: pure grouping is fixture-tested and the Caro-Kann course page shows chapters (Advance, Exchange, …) each learnable on its own.
 - [x] **T7.11 Library progress bars** (S) — every library card shows a prominent progress bar with a percentage of lines learned (0% for courses not started), plus due count. Done when: renders at desktop and narrow widths.
+
+## Phase 8 — Puzzles
+
+Goal: rated tactics puzzles like chess.com's puzzle mode, free and offline. Mimic the look only; puzzles come from the Lichess puzzle database (CC0).
+
+**Decided (2026-11-09):** a rating-stratified 21.7k-puzzle subset (ratings 500–2600, low RD, popular) taken from the first ~16 MB of the Lichess file, bundled as `public/puzzles/puzzles.json` and loaded into IndexedDB on first visit. Glicko-2 rating starting at 1000 (RD 350, RD floor 60). A wrong move, a hint or the solution scores the puzzle as a loss. Rated mode only; Puzzle Rush is a later ticket.
+
+- [x] **T8.1 Rated puzzles** (L) — `src/puzzles/`: pure Glicko-2 update, selection near the rating (unseen first, widening window), solution checking (setup move auto-played; an alternative mate counts as correct); Dexie v5 adds `puzzles` and `puzzleAttempts` (backed up); Puzzles tab with a chess.com-style solver (feedback, Hint → square then arrow, Retry, Solution, Next puzzle, rating change) and a History view (rating graph, totals, themes, recent attempts). Done when: typecheck/lint/tests pass and the tab works in the running app.

@@ -30,6 +30,7 @@ const TABLE_LABELS: Record<BackupTable, string> = {
   evalCache: 'Cached engine evaluations',
   archives: 'chess.com months fetched',
   games: 'Imported games',
+  puzzleAttempts: 'Puzzle attempts',
 }
 
 /** Default file saver: a temporary download link. */

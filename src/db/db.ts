@@ -181,6 +181,36 @@ export interface SettingsRow extends Partial<AppSettings> {
   id: 'app'
 }
 
+/** One bundled Lichess puzzle (T8.1). Loaded from `public/puzzles/puzzles.json`, not backed up. */
+export interface PuzzleRow {
+  id: string
+  /** Position before the opponent's setup move. */
+  fen: string
+  /** UCI: setup move, then the solution. */
+  moves: string[]
+  rating: number
+  themes: string[]
+}
+
+/** One rated puzzle attempt and the user's puzzle rating after it (T8.1). */
+export interface PuzzleAttemptRow {
+  id?: number
+  puzzleId: string
+  at: Date
+  solved: boolean
+  puzzleRating: number
+  themes: string[]
+  ratingBefore: number
+  /** Glicko-2 state after the attempt; the latest row is the user's current rating. */
+  ratingAfter: number
+  rdAfter: number
+  volAfter: number
+  hintUsed: boolean
+  mistakes: number
+  /** Time from the puzzle starting to the result being known. */
+  durationMs: number
+}
+
 /** Repertoire rows saved by v2 carried the whole tree inline. */
 interface V2RepertoireRow extends Omit<RepertoireRow, 'rootKey' | 'positionCount'> {
   tree?: RepertoireTree
@@ -224,6 +254,8 @@ export class TrainerDB extends Dexie {
   evalCache!: EntityTable<EvalCacheRow, 'key'>
   archives!: EntityTable<ArchiveRow, 'id'>
   games!: EntityTable<GameRow, 'id'>
+  puzzles!: EntityTable<PuzzleRow, 'id'>
+  puzzleAttempts!: EntityTable<PuzzleAttemptRow, 'id'>
 
   constructor(name: string = DB_NAME) {
     super(name)
@@ -254,6 +286,15 @@ export class TrainerDB extends Dexie {
       .stores({
         archives: 'id, username',
         games: 'id, username, endTime, archiveId',
+      })
+      .upgrade(() => {
+        // New tables only: nothing to transform.
+      })
+    // v5 (T8.1): bundled puzzles and the user's rated attempts.
+    this.version(5)
+      .stores({
+        puzzles: 'id, rating',
+        puzzleAttempts: '++id, puzzleId, at',
       })
       .upgrade(() => {
         // New tables only: nothing to transform.

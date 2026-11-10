@@ -14,6 +14,8 @@ export {
   type EvalCacheRow,
   type ExplorerCacheRow,
   type NodeRow,
+  type PuzzleAttemptRow,
+  type PuzzleRow,
   type RepertoireRow,
   type ReviewDetails,
   type ReviewLogRow,

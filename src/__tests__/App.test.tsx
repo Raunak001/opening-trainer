@@ -21,7 +21,16 @@ describe('App', () => {
       within(main)
         .getAllByRole('button')
         .map((b) => b.textContent),
-    ).toEqual(['Library', 'Practice all', 'Lessons', 'Progress', 'Import', 'Backup', 'Advanced'])
+    ).toEqual([
+      'Library',
+      'Practice all',
+      'Puzzles',
+      'Lessons',
+      'Progress',
+      'Import',
+      'Backup',
+      'Advanced',
+    ])
 
     fireEvent.click(screen.getByRole('button', { name: 'Advanced' }))
     fireEvent.click(screen.getByRole('button', { name: 'Build' }))

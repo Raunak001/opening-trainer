@@ -14,6 +14,7 @@ export const BACKUP_TABLES = [
   'evalCache',
   'archives',
   'games',
+  'puzzleAttempts',
 ] as const
 
 export type BackupTable = (typeof BACKUP_TABLES)[number]
@@ -29,10 +30,15 @@ const PRIMARY_KEY: Record<BackupTable, string> = {
   evalCache: 'key',
   archives: 'id',
   games: 'id',
+  puzzleAttempts: 'id',
 }
 
 /** Schema version that introduced each table. Older backups restore with those tables empty. */
-const TABLE_SINCE: Partial<Record<BackupTable, number>> = { archives: 4, games: 4 }
+const TABLE_SINCE: Partial<Record<BackupTable, number>> = {
+  archives: 4,
+  games: 4,
+  puzzleAttempts: 5,
+}
 
 /** Oldest schema version whose backups still restore (later versions only added tables). */
 export const MIN_BACKUP_SCHEMA = 3
