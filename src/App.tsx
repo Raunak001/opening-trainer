@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { SoundToggle } from './board/SoundToggle'
 // Not re-exported from the db index, which pure code imports: keep React out of it.
 import { BackupPage } from './db/BackupPage'
 import { ImportPage } from './importer'
@@ -50,6 +51,7 @@ function App() {
             {v.label}
           </button>
         ))}
+        <SoundToggle />
       </nav>
       {view === 'advanced' && (
         <nav className="app-nav app-nav--sub" aria-label="Advanced">

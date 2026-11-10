@@ -2,7 +2,7 @@ import { Chessground } from 'chessground'
 import type { Api } from 'chessground/api'
 import type { Config } from 'chessground/config'
 import type { DrawBrush, DrawShape } from 'chessground/draw'
-import type { Color, Key, SquareClasses } from 'chessground/types'
+import type { Color, Key, Pieces, SquareClasses } from 'chessground/types'
 import { useEffect, useRef, useState } from 'react'
 import 'chessground/assets/chessground.base.css'
 import './board.css'
@@ -15,6 +15,9 @@ import {
   type PromotionPiece,
 } from './dests'
 import { PromotionPicker } from './PromotionPicker'
+import { createAnimator, type Animator } from './animate'
+import { playSound } from './audio'
+import { moveSound } from './sound'
 
 export interface BoardProps {
   /** Position to show. The parent owns it: apply the move in `onMove` and pass the new FEN back. */
@@ -34,6 +37,8 @@ export interface BoardProps {
   interactive?: boolean
   /** Extra CSS classes per square: `wrong` (red flash) and `hint` are styled in board.css. */
   squareClasses?: SquareClasses
+  /** Move sounds when the position advances by one legal move. On by default. */
+  sounds?: boolean
 }
 
 const EMPTY_SHAPES: DrawShape[] = []
@@ -70,6 +75,7 @@ export function Board({
   lastMove,
   interactive = true,
   squareClasses = NO_CLASSES,
+  sounds = true,
 }: BoardProps) {
   const elRef = useRef<HTMLDivElement>(null)
   const apiRef = useRef<Api | null>(null)
@@ -85,13 +91,32 @@ export function Board({
     }
   }, [fen, onMove])
 
+  // Pieces animate on the compositor (animate.ts); chessground only places them.
+  const animatorRef = useRef<Animator | null>(null)
+  // The pieces as last shown, to animate the user's own click-moves from.
+  const shownRef = useRef<Pieces>(new Map())
+
   useEffect(() => {
-    if (!elRef.current) return
-    const api = Chessground(elRef.current, {
+    const el = elRef.current
+    if (!el) return
+    const animator = createAnimator()
+    animatorRef.current = animator
+    const api = Chessground(el, {
+      animation: { enabled: false },
       movable: {
         free: false,
         showDests: true,
-        events: { after: (orig, dest) => handleMoveRef.current(orig, dest) },
+        events: {
+          after: (orig, dest) => {
+            // A dragged piece is already on its square: only its castling rook slides. A
+            // click-move slides like any other move. chessground calls this on a timeout,
+            // after it has set `stats.dragged` for this move.
+            const dragged = api.state.stats.dragged
+            animator.animate(api, shownRef.current, dragged ? { from: orig, to: dest } : undefined)
+            shownRef.current = new Map(api.state.pieces)
+            handleMoveRef.current(orig, dest)
+          },
+        },
       },
       premovable: { enabled: false },
       draggable: { showGhost: true },
@@ -99,9 +124,15 @@ export function Board({
     })
     api.state.drawable.brushes[ARROW_BRUSH] = ORANGE
     apiRef.current = api
+    shownRef.current = new Map(api.state.pieces)
+    // Grabbing a piece mid-slide: finish the slides so the drag starts from a still board.
+    el.addEventListener('pointerdown', animator.cancel, { capture: true })
     return () => {
+      el.removeEventListener('pointerdown', animator.cancel, { capture: true })
+      animator.cancel()
       api.destroy()
       apiRef.current = null
+      animatorRef.current = null
     }
   }, [])
 
@@ -111,8 +142,26 @@ export function Board({
     const api = apiRef.current
     if (!api) return
     if (!canMove) api.selectSquare(null)
+    const prev = new Map(api.state.pieces)
     api.set(positionConfig(fen, orientation, canMove, lastMove))
+    animatorRef.current?.animate(api, prev)
+    shownRef.current = new Map(api.state.pieces)
   }, [fen, orientation, canMove, lastMove])
+
+  // A sound when the position moves on by one legal move; resets and jumps stay silent.
+  const prevFen = useRef(fen)
+  useEffect(() => {
+    const prev = prevFen.current
+    prevFen.current = fen
+    if (!sounds) return
+    const sound = moveSound(prev, fen)
+    if (sound) playSound(sound, turnColor(prev) === orientation)
+  }, [fen, sounds, orientation])
+
+  const hasWrong = [...squareClasses.values()].some((c) => c.split(' ').includes('wrong'))
+  useEffect(() => {
+    if (sounds && hasWrong) playSound('wrong')
+  }, [sounds, hasWrong])
 
   useEffect(() => {
     apiRef.current?.set({ highlight: { custom: squareClasses } })

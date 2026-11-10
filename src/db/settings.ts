@@ -76,6 +76,12 @@ export interface AppSettings {
     ratings: RatingBucket[]
     speeds: Speed[]
   }
+  /** Board sounds. */
+  sound: {
+    enabled: boolean
+    /** 0 (silent) to 1. */
+    volume: number
+  }
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -96,6 +102,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   lessons: { depth: 18, multiPv: 5, acceptWithinCp: 30, mineDepth: 12 },
   // Same band as the builder's defaults.
   courses: { ratings: [1600, 1800], speeds: ['blitz', 'rapid'] },
+  sound: { enabled: true, volume: 0.7 },
 }
 
 export type SettingsPatch = { [K in keyof AppSettings]?: Partial<AppSettings[K]> }
@@ -114,6 +121,7 @@ export function mergeSettings(base: AppSettings, patch: SettingsPatch | undefine
     importer: { ...base.importer, ...patch?.importer },
     lessons: { ...base.lessons, ...patch?.lessons },
     courses: { ...base.courses, ...patch?.courses },
+    sound: { ...base.sound, ...patch?.sound },
   }
 }
 
