@@ -50,7 +50,7 @@ describe('LibraryPage', () => {
     fireEvent.change(screen.getByRole('combobox', { name: 'Color' }), {
       target: { value: 'white' },
     })
-    expect(within(grid).getAllByRole('listitem')).toHaveLength(8)
+    expect(within(grid).getAllByRole('listitem')).toHaveLength(9)
     fireEvent.change(screen.getByRole('combobox', { name: 'First move' }), {
       target: { value: 'd4' },
     })

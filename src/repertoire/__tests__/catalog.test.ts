@@ -20,7 +20,7 @@ describe('CATALOG', () => {
   it('has unique ids and the agreed list', () => {
     const ids = CATALOG.map((e) => e.id)
     expect(new Set(ids).size).toBe(ids.length)
-    expect(CATALOG.filter((e) => e.color === 'white')).toHaveLength(8)
+    expect(CATALOG.filter((e) => e.color === 'white')).toHaveLength(9)
     expect(CATALOG.filter((e) => e.color === 'black')).toHaveLength(9)
   })
 

@@ -73,6 +73,15 @@ export const CATALOG: readonly CatalogEntry[] = [
     family: 'open',
   },
   {
+    id: 'kings-gambit',
+    name: "King's Gambit",
+    color: 'white',
+    startMoves: ['e4', 'e5', 'f4'],
+    blurb:
+      'White offers the f-pawn for a fast centre and an open f-file. Sharp, romantic attacking chess.',
+    family: 'open',
+  },
+  {
     id: 'queens-gambit',
     name: "Queen's Gambit",
     color: 'white',
