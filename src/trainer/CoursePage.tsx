@@ -325,9 +325,7 @@ function CourseOverview({
         >
           {next.line
             ? `Learn: ${displayName(next.line, openings, entry.name)}`
-            : next.reason === 'cap'
-              ? 'Learn (daily new-card limit reached)'
-              : 'Learn (all lines learned)'}
+            : 'Learn (all lines learned)'}
         </button>
         <button type="button" disabled={counts.due === 0 || building} onClick={onPractice}>
           {counts.due > 0 ? `Practice (${counts.due} due)` : 'Practice (nothing due)'}
@@ -377,12 +375,7 @@ function nextLine(
 ): CourseLine | undefined {
   if (chapter === undefined) return detail.next.line
   const lines = courseChapters(detail.lines, openings, entry).find((c) => c.name === chapter)?.lines
-  return lines
-    ? nextLineToLearn(lines, detail.cards, {
-        left: detail.newCardsLeft,
-        total: detail.newCardsTotal,
-      }).line
-    : undefined
+  return lines ? nextLineToLearn(lines, detail.cards).line : undefined
 }
 
 function ChapterList({
@@ -426,10 +419,7 @@ function ChapterList({
       </h2>
       {chapters.map((chapter, i) => {
         const learned = chapter.lines.filter((l) => l.status === 'learned').length
-        const next = nextLineToLearn(chapter.lines, detail.cards, {
-          left: detail.newCardsLeft,
-          total: detail.newCardsTotal,
-        })
+        const next = nextLineToLearn(chapter.lines, detail.cards)
         const expanded = isOpen(chapter.name, i)
         const pct = Math.round((learned / chapter.lines.length) * 100)
         return (
@@ -471,7 +461,7 @@ function ChapterList({
                 disabled={!next.line}
                 onClick={() => next.line && onLearn(next.line.id, chapter.name)}
               >
-                {next.line ? 'Learn' : next.reason === 'cap' ? 'Daily limit' : 'Done'}
+                {next.line ? 'Learn' : 'Done'}
               </button>
             </header>
             {expanded && (

@@ -283,11 +283,11 @@ describe('settings', () => {
     const db = new TrainerDB(dbName())
     const after = await updateSettings(db, { grading: { hardAfterMs: 20_000 } })
     expect(after.grading).toEqual({ hardAfterMs: 20_000, easyUnderMs: 2_000 })
-    await updateSettings(db, { daily: { newCards: 5 } })
+    await updateSettings(db, { daily: { reviews: 5 } })
     expect(await getSettings(db)).toEqual({
       ...DEFAULT_SETTINGS,
       grading: { hardAfterMs: 20_000, easyUnderMs: 2_000 },
-      daily: { newCards: 5, reviews: 200 },
+      daily: { reviews: 5 },
     })
     db.close()
   })

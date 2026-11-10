@@ -53,7 +53,7 @@ async function populated() {
   })
   await syncCards(db, rep.id, T0)
   await reviewCard(db, `${rep.id}:${keyAfter('')}`, Rating.Good, T0, { durationMs: 4000 })
-  await updateSettings(db, { daily: { newCards: 7 } })
+  await updateSettings(db, { daily: { reviews: 7 } })
   await db.explorerCache.put({
     key: 'k|speeds=blitz',
     positionKey: 'k',
@@ -141,7 +141,7 @@ describe('export and restore', () => {
     // Indexes work on restored data.
     expect(await target.cards.where('due').above(T0).count()).toBe(1)
     expect((await loadRepertoire(target, rep.id))?.tree).toEqual(rep.tree)
-    expect((await getSettings(target)).daily.newCards).toBe(7)
+    expect((await getSettings(target)).daily.reviews).toBe(7)
   })
 
   it('replaces whatever was there before', async () => {

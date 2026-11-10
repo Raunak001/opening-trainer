@@ -79,7 +79,7 @@ describe('ProgressPage', () => {
     expect(due.getByText(String(learning))).toBeInTheDocument()
     expect(due.getByText(`0 reviews · ${learning} learning`)).toBeInTheDocument()
     expect((await tile('New cards')).getByText('1')).toBeInTheDocument()
-    expect((await tile('New cards')).getByText('today, of 1 not yet studied')).toBeInTheDocument()
+    expect((await tile('New cards')).getByText('not yet studied')).toBeInTheDocument()
     expect((await tile('Streak')).getByText('2 days')).toBeInTheDocument()
     expect((await tile('Streak')).getByText(/Studied today · longest 2/)).toBeInTheDocument()
 
@@ -106,7 +106,7 @@ describe('ProgressPage', () => {
     const rep = await buildFrom(db, TWO_LINES, 2)
     await reviewCard(db, `${rep.id}:${keyAfter('')}`, Rating.Easy, new Date())
     const p = await loadProgress(db, new Date())
-    expect(p.today).toMatchObject({ newTotal: 2, newToday: 2 })
+    expect(p.today).toMatchObject({ newTotal: 2 })
     expect(p.streak).toEqual({ current: 1, longest: 1, studiedToday: true })
     expect(p.repertoires[0]).toMatchObject({ name: 'My 1.e4', cards: 3, studied: 1 })
     expect(p.repertoires[0].lines).toHaveLength(2)

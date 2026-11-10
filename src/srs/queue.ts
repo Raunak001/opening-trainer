@@ -15,8 +15,6 @@ export function queueKind(card: CardRow): QueueKind {
 }
 
 export interface DailyUsage {
-  /** Different cards studied for the first time today. */
-  newCards: number
   /** Different Review-state cards reviewed today. */
   reviews: number
 }
@@ -24,16 +22,14 @@ export interface DailyUsage {
 /** How much of today's caps earlier sessions used, from today's review logs. */
 export function dailyUsage(logs: readonly ReviewLogRow[], now: Date): DailyUsage {
   const from = startOfDay(now).getTime()
-  const fresh = new Set<string>()
   const reviewed = new Set<string>()
   for (const log of logs) {
     const t = log.review.getTime()
     if (t < from || t > now.getTime()) continue
     // `log.state` is the card's state before that review.
-    if (log.state === State.New) fresh.add(log.cardId)
-    else if (log.state === State.Review) reviewed.add(log.cardId)
+    if (log.state === State.Review) reviewed.add(log.cardId)
   }
-  return { newCards: fresh.size, reviews: reviewed.size }
+  return { reviews: reviewed.size }
 }
 
 export interface QueueOptions {
@@ -49,8 +45,8 @@ export interface QueueOptions {
 export interface DueQueue {
   cards: CardRow[]
   counts: Record<QueueKind, number>
-  /** Due cards left out by today's caps. */
-  heldBack: { newCards: number; reviews: number }
+  /** Due reviews left out by today's review cap. */
+  heldBack: { reviews: number }
 }
 
 const byDue = (a: CardRow, b: CardRow) =>
@@ -59,8 +55,8 @@ const byDue = (a: CardRow, b: CardRow) =>
 /**
  * Today's study queue (pure): due learning cards, then due reviews oldest
  * first, then new cards in rank order. Suspended cards never appear. Reviews
- * and new cards are capped by what is left of today's limits; learning steps
- * are not capped, so a card already started is never blocked.
+ * are capped by what is left of today's review limit; learning steps and new
+ * cards are not capped.
  */
 export function buildDueQueue(cards: readonly CardRow[], now: Date, opts: QueueOptions): DueQueue {
   const learning: CardRow[] = []
@@ -80,17 +76,12 @@ export function buildDueQueue(cards: readonly CardRow[], now: Date, opts: QueueO
   reviews.sort(byDue)
 
   const reviewRoom = Math.max(0, opts.limits.reviews - opts.usage.reviews)
-  const newRoom = Math.max(0, opts.limits.newCards - opts.usage.newCards)
   const takenReviews = reviews.slice(0, reviewRoom)
-  const takenNew = fresh.slice(0, newRoom)
 
   return {
-    cards: [...learning, ...takenReviews, ...takenNew],
-    counts: { learning: learning.length, review: takenReviews.length, new: takenNew.length },
-    heldBack: {
-      reviews: reviews.length - takenReviews.length,
-      newCards: fresh.length - takenNew.length,
-    },
+    cards: [...learning, ...takenReviews, ...fresh],
+    counts: { learning: learning.length, review: takenReviews.length, new: fresh.length },
+    heldBack: { reviews: reviews.length - takenReviews.length },
   }
 }
 

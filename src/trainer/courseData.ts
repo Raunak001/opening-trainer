@@ -1,7 +1,7 @@
 // Course data for the library, course page and Learn mode. Database reads only; no React.
 
 import { State } from 'ts-fsrs'
-import { getSettings, type CardRow, type RepertoireRow, type TrainerDB } from '../db'
+import { type CardRow, type RepertoireRow, type TrainerDB } from '../db'
 // Direct module imports: the repertoire index also re-exports React pages.
 import { loadRepertoire, type Repertoire } from '../repertoire/builder'
 import { CATALOG, type CatalogEntry } from '../repertoire/catalog'
@@ -17,7 +17,6 @@ import {
   type LineStatus,
 } from '../repertoire/lines'
 import type { PositionKey } from '../repertoire/positionKey'
-import { dailyUsage, startOfDay } from '../srs/queue'
 import { nextLineToLearn, type NextLine } from './learn'
 
 export interface LineWithStatus extends CourseLine {
@@ -95,12 +94,8 @@ export interface CourseDetail {
   lines: LineWithStatus[]
   cards: Map<PositionKey, CardRow>
   counts: CourseCounts
-  /** The line Learn would teach next, or why there is none. */
+  /** The line Learn would teach next, if any. */
   next: NextLine
-  /** New cards today's cap still allows. */
-  newCardsLeft: number
-  /** Today's whole new-card cap. */
-  newCardsTotal: number
 }
 
 /** Everything the course page and Learn mode need; undefined if not started. */
@@ -116,13 +111,6 @@ export async function loadCourse(
       const repertoire = await loadRepertoire(db, courseRepertoireId(entryId))
       if (!repertoire) return undefined
       const cardRows = await db.cards.where('repertoireId').equals(repertoire.id).toArray()
-      const settings = await getSettings(db)
-      const logs = await db.reviewLogs
-        .where('review')
-        .between(startOfDay(now), now, true, true)
-        .toArray()
-      const total = settings.daily.newCards
-      const left = Math.max(0, total - dailyUsage(logs, now).newCards)
       const lines = linesWithStatus(repertoire, cardRows)
       const cards = cardsByPosition(cardRows)
       return {
@@ -130,9 +118,7 @@ export async function loadCourse(
         lines,
         cards,
         counts: courseCounts(lines, dueCount(cardRows, now)),
-        next: nextLineToLearn(lines, cards, { left, total }),
-        newCardsLeft: left,
-        newCardsTotal: total,
+        next: nextLineToLearn(lines, cards),
       }
     },
   )

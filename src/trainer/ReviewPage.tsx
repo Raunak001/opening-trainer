@@ -166,10 +166,9 @@ export function ReviewPage({
     return (
       <div className="review__message">
         <p>Nothing is due right now.</p>
-        {(heldBack.newCards > 0 || heldBack.reviews > 0) && (
+        {heldBack.reviews > 0 && (
           <p className="review__muted">
-            Today&apos;s limits are reached: {heldBack.newCards} new and {heldBack.reviews} review
-            cards wait for tomorrow.
+            Today&apos;s review limit is reached: {heldBack.reviews} review cards wait for tomorrow.
           </p>
         )}
         <button type="button" onClick={() => setReloads((n) => n + 1)}>

@@ -73,14 +73,12 @@ const AFTER_E5 = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w'
 const AFTER_C5 = 'rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w'
 
 describe('ReviewPage', () => {
-  it('says when nothing is due, and why', async () => {
+  it('says when nothing is due', async () => {
     const { db } = await setup()
-    await updateSettings(db, { daily: { newCards: 0 } })
+    await db.cards.toCollection().modify({ suspended: true })
     render(<ReviewPage db={db} />)
     expect(await screen.findByText('Nothing is due right now.', {}, WAIT)).toBeInTheDocument()
-    expect(
-      screen.getByText(/Today's limits are reached: 3 new and 0 review cards wait/),
-    ).toBeInTheDocument()
+    expect(screen.queryByText(/limit is reached/)).not.toBeInTheDocument()
   })
 
   it('plays each card in its line context, grades it, requeues Again, and saves reviews', async () => {

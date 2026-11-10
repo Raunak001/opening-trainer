@@ -43,7 +43,7 @@ export function ProgressPage({ db: dbProp, onStartReview }: ProgressPageProps) {
 
   const { today, streak } = progress
   const overCap = today.review - today.reviewWithinCap
-  const toStudy = today.learning + today.reviewWithinCap + progress.practiceNewToday
+  const toStudy = today.learning + today.reviewWithinCap + progress.practiceNew
 
   return (
     <main className="progress">
@@ -52,8 +52,8 @@ export function ProgressPage({ db: dbProp, onStartReview }: ProgressPageProps) {
           {plural(today.review, 'review')} · {today.learning} learning
           {overCap > 0 && ` · ${overCap} over today's limit`}
         </Tile>
-        <Tile label="New cards" value={String(today.newToday)}>
-          today, of {today.newTotal} not yet studied
+        <Tile label="New cards" value={String(today.newTotal)}>
+          not yet studied
         </Tile>
         <Tile label="Streak" value={plural(streak.current, 'day')}>
           {streak.studiedToday

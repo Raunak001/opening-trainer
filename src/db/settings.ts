@@ -17,7 +17,7 @@ export interface AppSettings {
     requestRetention: number
   }
   daily: {
-    newCards: number
+    /** Review cards per day. New cards are not capped. */
     reviews: number
   }
   progress: {
@@ -104,7 +104,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   grading: { hardAfterMs: 15_000, easyUnderMs: 2_000 },
   fsrs: { requestRetention: 0.9 },
-  daily: { newCards: 20, reviews: 200 },
+  daily: { reviews: 200 },
   progress: { masteredAfterDays: 21 },
   // Lichess's judgement thresholds (0.1 / 0.2 / 0.3 winning chances) on the win% scale.
   moveGrading: { depth: 16, inaccuracy: 5, mistake: 10, blunder: 15, sanityCpLoss: 50 },

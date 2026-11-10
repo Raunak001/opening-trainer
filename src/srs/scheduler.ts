@@ -173,10 +173,10 @@ export interface RepertoireProgress {
 export interface Progress {
   today: TodayCounts
   /**
-   * New cards Practice would serve today. Library courses' new cards are learned
+   * New cards Practice would serve. Library courses' new cards are learned
    * in Learn mode instead, so they are not counted here.
    */
-  practiceNewToday: number
+  practiceNew: number
   streak: Streak
   /** Mean card mastery over all repertoires, 0–1. */
   mastery: number
@@ -225,7 +225,7 @@ export async function loadProgress(db: TrainerDB, now: Date = new Date()): Promi
       )
       return {
         today: todayCounts(cards, now, settings.daily, usage),
-        practiceNewToday: todayCounts(practiceCards, now, settings.daily, usage).newToday,
+        practiceNew: todayCounts(practiceCards, now, settings.daily, usage).newTotal,
         streak: studyStreak(reviewTimes, now),
         mastery: overallMastery(cards, days),
         masteredAfterDays: days,

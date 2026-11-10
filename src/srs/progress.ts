@@ -24,8 +24,6 @@ export interface TodayCounts {
   reviewWithinCap: number
   /** Cards never studied. */
   newTotal: number
-  /** New cards today's cap still allows. */
-  newToday: number
 }
 
 /** Today's workload (pure). Suspended cards are ignored. */
@@ -53,7 +51,6 @@ export function todayCounts(
     review,
     reviewWithinCap: Math.min(review, Math.max(0, limits.reviews - usage.reviews)),
     newTotal,
-    newToday: Math.min(newTotal, Math.max(0, limits.newCards - usage.newCards)),
   }
 }
 

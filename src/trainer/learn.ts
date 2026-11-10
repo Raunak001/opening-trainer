@@ -298,35 +298,27 @@ export function learnReviews(state: LearnState, grading: AppSettings['grading'])
   return reviews
 }
 
-/** New cards on a line (for the daily cap). */
+/** New cards on a line. */
 export function newCardCount(state: Pick<LearnState, 'steps'>): number {
   return new Set(state.steps.filter((s) => s.isNew).map((s) => s.key)).size
 }
 
-/** Why there is no next line to learn. */
-export type NextLine =
-  { line: CourseLine; newCards: number } | { line: undefined; reason: 'done' | 'cap' }
+/** The next line to learn, or none when every line is learned. */
+export type NextLine = { line: CourseLine; newCards: number } | { line: undefined }
 
 /**
- * The next line to learn: the most frequent line that still has new cards,
- * if today's new-card cap leaves room for them. A line bigger than the whole
- * cap is still offered as the first one of the day, so it is never stuck.
+ * The next line to learn: the most frequent line that still has new cards.
  * `lines` must be in frequency order (as `enumerateLines` returns them).
  */
 export function nextLineToLearn(
   lines: readonly CourseLine[],
   cards: ReadonlyMap<PositionKey, CardRow>,
-  cap: { left: number; total: number },
 ): NextLine {
-  let blocked = false
   for (const line of lines) {
     const fresh = lineCards(line, cards).filter((c) => c.state === State.New).length
-    if (fresh === 0) continue
-    if (cap.left > 0 && (fresh <= cap.left || cap.left >= cap.total))
-      return { line, newCards: fresh }
-    blocked = true
+    if (fresh > 0) return { line, newCards: fresh }
   }
-  return { line: undefined, reason: blocked ? 'cap' : 'done' }
+  return { line: undefined }
 }
 
 /** Records the first review of each new card of a learned line. */

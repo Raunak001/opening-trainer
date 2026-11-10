@@ -20,7 +20,7 @@ afterEach(async () => {
 
 async function backupWith(newCards: number) {
   const db = openDb()
-  await updateSettings(db, { daily: { newCards } })
+  await updateSettings(db, { daily: { reviews: newCards } })
   await db.explorerCache.put({ key: 'k', positionKey: 'p', params: '', response: {}, fetchedAt: 1 })
   return serializeBackup(await exportBackup(db, new Date(2026, 10, 8, 9, 30)))
 }
@@ -34,7 +34,7 @@ function pick(text: string, name = 'backup.json') {
 describe('BackupPage', () => {
   it('exports everything to a dated JSON file', async () => {
     const db = openDb()
-    await updateSettings(db, { daily: { newCards: 3 } })
+    await updateSettings(db, { daily: { reviews: 3 } })
     const saveFile = vi.fn()
     render(<BackupPage db={db} saveFile={saveFile} />)
 
@@ -42,12 +42,12 @@ describe('BackupPage', () => {
     expect(await screen.findByText('Backup saved.', {}, WAIT)).toBeInTheDocument()
     const [name, text] = saveFile.mock.calls[0]
     expect(name).toMatch(/^opening-trainer-backup-\d{4}-\d{2}-\d{2}\.json$/)
-    expect(parseBackup(text, 6).tables.settings).toMatchObject([{ daily: { newCards: 3 } }])
+    expect(parseBackup(text, 6).tables.settings).toMatchObject([{ daily: { reviews: 3 } }])
   })
 
   it('shows what a file contains and restores only after confirmation', async () => {
     const db = openDb()
-    await updateSettings(db, { daily: { newCards: 1 } })
+    await updateSettings(db, { daily: { reviews: 1 } })
     const saveFile = vi.fn()
     render(<BackupPage db={db} saveFile={saveFile} />)
 
@@ -58,12 +58,12 @@ describe('BackupPage', () => {
     expect(dialog.getByRole('row', { name: /Cards 0/ })).toBeInTheDocument()
     expect(dialog.getByText(/Everything currently in the app is deleted/)).toBeInTheDocument()
     // Nothing has changed yet.
-    expect((await getSettings(db)).daily.newCards).toBe(1)
+    expect((await getSettings(db)).daily.reviews).toBe(1)
 
     fireEvent.click(dialog.getByRole('button', { name: 'Save current data first' }))
     await waitFor(() => expect(saveFile).toHaveBeenCalledOnce())
     expect(parseBackup(saveFile.mock.calls[0][1], 6).tables.settings).toMatchObject([
-      { daily: { newCards: 1 } },
+      { daily: { reviews: 1 } },
     ])
     expect(await dialog.findByRole('button', { name: 'Current data saved' })).toBeDisabled()
 
@@ -72,20 +72,20 @@ describe('BackupPage', () => {
       await screen.findByText('Restored 0 repertoires, 0 cards and 0 reviews.', {}, WAIT),
     ).toBeInTheDocument()
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-    expect((await getSettings(db)).daily.newCards).toBe(42)
+    expect((await getSettings(db)).daily.reviews).toBe(42)
     expect(await db.explorerCache.count()).toBe(1)
   })
 
   it('cancel leaves the data alone', async () => {
     const db = openDb()
-    await updateSettings(db, { daily: { newCards: 1 } })
+    await updateSettings(db, { daily: { reviews: 1 } })
     render(<BackupPage db={db} saveFile={vi.fn()} />)
 
     pick(await backupWith(42))
     const dialog = within(await screen.findByRole('alertdialog', {}, WAIT))
     fireEvent.click(dialog.getByRole('button', { name: 'Cancel' }))
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-    expect((await getSettings(db)).daily.newCards).toBe(1)
+    expect((await getSettings(db)).daily.reviews).toBe(1)
   })
 
   it('explains why a file cannot be used', async () => {

@@ -290,7 +290,7 @@ describe('nextLineToLearn', () => {
   const lines = [advance, main]
 
   it('picks the most frequent line with new cards', () => {
-    expect(nextLineToLearn(lines, fresh, { left: 20, total: 20 })).toEqual({
+    expect(nextLineToLearn(lines, fresh)).toEqual({
       line: advance,
       newCards: 3,
     })
@@ -300,24 +300,13 @@ describe('nextLineToLearn', () => {
       card('e4 c6 d4', State.Review),
       card('e4 c6 d4 d5 e5', State.Learning),
     ])
-    expect(nextLineToLearn(lines, learned, { left: 20, total: 20 })).toEqual({
+    expect(nextLineToLearn(lines, learned)).toEqual({
       line: main,
       newCards: 1,
     })
     const all = new Map([...learned, card('e4 c6 d4 d5 Nc3', State.Review)])
-    expect(nextLineToLearn(lines, all, { left: 20, total: 20 })).toEqual({
+    expect(nextLineToLearn(lines, all)).toEqual({
       line: undefined,
-      reason: 'done',
     })
-  })
-
-  it('respects the daily new-card cap', () => {
-    expect(nextLineToLearn(lines, fresh, { left: 2, total: 20 })).toEqual({
-      line: undefined,
-      reason: 'cap',
-    })
-    expect(nextLineToLearn(lines, fresh, { left: 0, total: 20 })).toMatchObject({ reason: 'cap' })
-    // A line bigger than the whole cap is still offered first thing in the day.
-    expect(nextLineToLearn(lines, fresh, { left: 2, total: 2 })).toMatchObject({ line: advance })
   })
 })

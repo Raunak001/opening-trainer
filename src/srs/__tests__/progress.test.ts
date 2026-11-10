@@ -37,8 +37,8 @@ describe('endOfDay', () => {
 })
 
 describe('todayCounts', () => {
-  const limits = { newCards: 20, reviews: 200 }
-  const none = { newCards: 0, reviews: 0 }
+  const limits = { reviews: 200 }
+  const none = { reviews: 0 }
 
   it('counts started cards due before midnight, by kind', () => {
     const counts = todayCounts(
@@ -63,18 +63,19 @@ describe('todayCounts', () => {
       review: 2,
       reviewWithinCap: 2,
       newTotal: 2,
-      newToday: 2,
     })
   })
 
-  it("applies what is left of today's caps", () => {
+  it("applies what is left of today's review cap", () => {
     const cards = [studied('e4', 5, at(7)), studied('d4', 5, at(7)), card('c4'), card('Nf3')]
-    expect(
-      todayCounts(cards, NOW, { newCards: 3, reviews: 5 }, { newCards: 2, reviews: 4 }),
-    ).toMatchObject({ review: 2, reviewWithinCap: 1, newTotal: 2, newToday: 1 })
-    expect(todayCounts(cards, NOW, limits, { newCards: 30, reviews: 300 })).toMatchObject({
+    expect(todayCounts(cards, NOW, { reviews: 5 }, { reviews: 4 })).toMatchObject({
+      review: 2,
+      reviewWithinCap: 1,
+      newTotal: 2,
+    })
+    expect(todayCounts(cards, NOW, limits, { reviews: 300 })).toMatchObject({
       reviewWithinCap: 0,
-      newToday: 0,
+      newTotal: 2,
     })
   })
 })
