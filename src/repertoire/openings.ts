@@ -77,18 +77,47 @@ export function buildOpeningIndex(rows: readonly Opening[]): Map<PositionKey, Op
 
 let indexPromise: Promise<OpeningIndex> | undefined
 
-/**
- * The bundled Lichess opening names, loaded on first use. The TSVs are a
- * separate chunk, so they cost nothing until something asks for a name.
- */
-export function loadOpeningIndex(): Promise<OpeningIndex> {
-  indexPromise ??= Promise.all([
+/** Builds the index on the calling thread. Used in tests and when a worker is not available. */
+function buildOnThisThread(): Promise<OpeningIndex> {
+  return Promise.all([
     import('./openings/a.tsv?raw'),
     import('./openings/b.tsv?raw'),
     import('./openings/c.tsv?raw'),
     import('./openings/d.tsv?raw'),
     import('./openings/e.tsv?raw'),
   ]).then((files) => buildOpeningIndex(files.flatMap((f) => parseOpeningsTsv(f.default))))
+}
+
+type WorkerReply = { index: Map<PositionKey, Opening> } | { error: string }
+
+/** Builds the index in a Web Worker, so the page keeps responding (and animating) meanwhile. */
+function buildInWorker(): Promise<OpeningIndex> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL('./openings.worker.ts', import.meta.url), {
+      type: 'module',
+    })
+    worker.onmessage = (event: MessageEvent<WorkerReply>) => {
+      worker.terminate()
+      if ('index' in event.data) resolve(event.data.index)
+      else reject(new Error(event.data.error))
+    }
+    worker.onerror = (event) => {
+      worker.terminate()
+      reject(new Error(event.message || 'Opening index worker failed'))
+    }
+  })
+}
+
+/**
+ * The bundled Lichess opening names, loaded on first use. The TSVs are a
+ * separate chunk, so they cost nothing until something asks for a name.
+ * Built in a worker where the browser has one, else on this thread.
+ */
+export function loadOpeningIndex(): Promise<OpeningIndex> {
+  indexPromise ??=
+    typeof Worker === 'function'
+      ? buildInWorker().catch(() => buildOnThisThread())
+      : buildOnThisThread()
   return indexPromise
 }
 
