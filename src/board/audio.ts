@@ -20,10 +20,26 @@ export function configureSound(options: { enabled?: boolean; volume?: number }) 
 
 function audio(): AudioContext | null {
   if (typeof window === 'undefined' || typeof window.AudioContext !== 'function') return null
-  // Created on first use, which follows a click, so the autoplay policy lets it start.
   ctx ??= new window.AudioContext({ latencyHint: 'interactive' })
-  if (ctx.state === 'suspended') ctx.resume().catch(() => {})
   return ctx
+}
+
+/**
+ * Starts the audio engine and wakes the output device with a silent sample. Call it from
+ * the first click or key press: otherwise the first move pays the start-up cost, and some
+ * outputs (Bluetooth especially) stutter or double that first sound.
+ */
+export function primeAudio() {
+  const ac = audio()
+  if (!ac) return
+  const wake = () => {
+    const src = ac.createBufferSource()
+    src.buffer = ac.createBuffer(1, 1, ac.sampleRate)
+    src.connect(ac.destination)
+    src.start()
+  }
+  if (ac.state === 'running') wake()
+  else ac.resume().then(wake, () => {})
 }
 
 function noiseBuffer(ac: AudioContext): AudioBuffer {
@@ -46,7 +62,7 @@ function envelope(ac: AudioContext, out: AudioNode, at: number, peak: number, de
 }
 
 /** The felt tap. */
-const TAP = { tone: 800, q: 0.6, lowpass: 2200, decay: 0.032, gain: 0.8 }
+const TAP = { tone: 550, q: 0.7, lowpass: 1500, decay: 0.036, gain: 0.95 }
 
 /** One piece set down. `pitch` scales the tone: lower for the opponent, higher for captures. */
 function tap(ac: AudioContext, out: AudioNode, at: number, pitch = 1) {
@@ -92,6 +108,17 @@ export function playSound(sound: BoardSound, mine = true) {
   if (!enabled || volume === 0) return
   const ac = audio()
   if (!ac) return
+  // A suspended context's clock is stopped: sounds scheduled on it would all fire together
+  // when it resumes. Wait for it to run, then schedule.
+  if (ac.state === 'running') render(ac, sound, mine)
+  else
+    ac.resume().then(
+      () => render(ac, sound, mine),
+      () => {},
+    )
+}
+
+function render(ac: AudioContext, sound: BoardSound, mine: boolean) {
   const out = ac.createGain()
   out.gain.value = volume
   out.connect(ac.destination)
