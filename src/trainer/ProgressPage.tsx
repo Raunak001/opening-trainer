@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState, type ReactNode } from 'react'
+import { Heatmap } from '../coordinates/Heatmap'
 import { getDb, type TrainerDB } from '../db'
 import { formatLine } from '../repertoire/builderForm'
 import { TIERS } from '../repertoire/courses'
@@ -79,7 +80,33 @@ export function ProgressPage({ db: dbProp, onStartReview }: ProgressPageProps) {
       {progress.repertoires.map((rep) => (
         <RepertoireSection key={rep.id} rep={rep} openings={openings} />
       ))}
+
+      <BoardVision db={db} />
     </main>
+  )
+}
+
+/** Coordinate drill heatmaps from both sides, once there are any answers. */
+function BoardVision({ db }: { db: TrainerDB }) {
+  const rows = useLiveQuery(() => db.coordStats.toArray(), [db])
+  if (!rows || rows.length === 0) return null
+  return (
+    <section className="progress__rep" aria-label="Board vision">
+      <header className="progress__rep-header">
+        <h2>Board vision</h2>
+        <span className="progress__muted">Coordinate drills, square by square</span>
+      </header>
+      <div className="progress__heatmaps">
+        <div>
+          <h3 className="progress__sub">White at the bottom</h3>
+          <Heatmap rows={rows} view="white" compact />
+        </div>
+        <div>
+          <h3 className="progress__sub">Black at the bottom</h3>
+          <Heatmap rows={rows} view="black" compact />
+        </div>
+      </div>
+    </section>
   )
 }
 

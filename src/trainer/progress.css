@@ -209,3 +209,14 @@
     display: none;
   }
 }
+
+.progress__heatmaps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.progress__heatmaps > div {
+  flex: 1 1 240px;
+  max-width: 300px;
+}
