@@ -1,9 +1,10 @@
 import type { BoardSound } from './sound'
 
 /*
- * Board sounds, synthesised with Web Audio: a short band-passed noise burst (the "tock" of
- * a wooden piece) over a low sine thump, plus a small tone for check and promotion. No audio
- * files, nothing copied from any chess site: only the general feel is mimicked.
+ * Board sounds, synthesised with Web Audio. The "felt tap": a very short burst of noise,
+ * band-passed low and then low-passed, like a felt-bottomed piece set down on a board.
+ * Check and promotion add a soft sine chime. No audio files, nothing copied from any
+ * chess site.
  */
 
 let enabled = true
@@ -38,64 +39,50 @@ function noiseBuffer(ac: AudioContext): AudioBuffer {
 function envelope(ac: AudioContext, out: AudioNode, at: number, peak: number, decay: number) {
   const gain = ac.createGain()
   gain.gain.setValueAtTime(0.0001, at)
-  gain.gain.exponentialRampToValueAtTime(peak, at + 0.002)
+  gain.gain.exponentialRampToValueAtTime(peak, at + 0.0015)
   gain.gain.exponentialRampToValueAtTime(0.0001, at + decay)
   gain.connect(out)
   return gain
 }
 
-interface Knock {
-  /** Centre of the noise band: higher is a sharper click. */
-  tone: number
-  /** Pitch of the low thump. */
-  body: number
-  decay: number
-  gain: number
-}
+/** The felt tap. */
+const TAP = { tone: 800, q: 0.6, lowpass: 2200, decay: 0.032, gain: 0.8 }
 
-/** One piece landing on the board. */
-function knock(ac: AudioContext, out: AudioNode, at: number, k: Knock) {
+/** One piece set down. `pitch` scales the tone: lower for the opponent, higher for captures. */
+function tap(ac: AudioContext, out: AudioNode, at: number, pitch = 1) {
   const src = ac.createBufferSource()
   src.buffer = noiseBuffer(ac)
   const band = ac.createBiquadFilter()
   band.type = 'bandpass'
-  band.frequency.value = k.tone
-  band.Q.value = 1.4
-  src.connect(band).connect(envelope(ac, out, at, k.gain, k.decay))
+  band.frequency.value = TAP.tone * pitch
+  band.Q.value = TAP.q
+  const low = ac.createBiquadFilter()
+  low.type = 'lowpass'
+  low.frequency.value = TAP.lowpass
+  src
+    .connect(band)
+    .connect(low)
+    .connect(envelope(ac, out, at, TAP.gain, TAP.decay))
   src.start(at)
-  src.stop(at + k.decay + 0.02)
-
-  const thump = ac.createOscillator()
-  thump.type = 'sine'
-  thump.frequency.setValueAtTime(k.body, at)
-  thump.frequency.exponentialRampToValueAtTime(k.body * 0.6, at + k.decay * 1.5)
-  thump.connect(envelope(ac, out, at, k.gain * 0.8, k.decay * 1.5))
-  thump.start(at)
-  thump.stop(at + k.decay * 1.5 + 0.02)
+  src.stop(at + TAP.decay + 0.02)
 }
 
-/** A short pitched note, for check and promotion. */
-function note(
+/** A soft sine note, for check, promotion and wrong moves. */
+function chime(
   ac: AudioContext,
   out: AudioNode,
   at: number,
   freq: number,
   gain: number,
-  decay = 0.2,
+  decay: number,
 ) {
   const osc = ac.createOscillator()
-  osc.type = 'triangle'
+  osc.type = 'sine'
   osc.frequency.value = freq
   osc.connect(envelope(ac, out, at, gain, decay))
   osc.start(at)
   osc.stop(at + decay + 0.02)
 }
-
-const MOVE: Knock = { tone: 1100, body: 190, decay: 0.07, gain: 0.9 }
-// The opponent's moves sit a little lower, so you can tell them apart by ear.
-const MOVE_OPPONENT: Knock = { tone: 850, body: 165, decay: 0.07, gain: 0.85 }
-const CAPTURE: Knock = { tone: 2300, body: 150, decay: 0.05, gain: 1 }
-const CAPTURE_TAIL: Knock = { tone: 900, body: 120, decay: 0.09, gain: 0.7 }
 
 /**
  * Plays a board sound. `mine` is true for the user's own moves. Does nothing when sound is
@@ -109,43 +96,34 @@ export function playSound(sound: BoardSound, mine = true) {
   out.gain.value = volume
   out.connect(ac.destination)
   const t = ac.currentTime + 0.005
-  const move = mine ? MOVE : MOVE_OPPONENT
+  // The opponent's moves sit a little lower, so you can tell them apart by ear.
+  const pitch = mine ? 1 : 0.85
   switch (sound) {
     case 'move':
-      knock(ac, out, t, move)
+      tap(ac, out, t, pitch)
       break
     case 'capture':
-      knock(ac, out, t, CAPTURE)
-      knock(ac, out, t + 0.012, CAPTURE_TAIL)
+      tap(ac, out, t, 1.35)
+      tap(ac, out, t + 0.016, 0.8)
       break
     case 'castle':
       // King, then rook.
-      knock(ac, out, t, move)
-      knock(ac, out, t + 0.09, { ...move, tone: move.tone * 0.85 })
+      tap(ac, out, t, pitch)
+      tap(ac, out, t + 0.075, pitch * 0.85)
       break
     case 'check':
-      knock(ac, out, t, move)
-      note(ac, out, t + 0.02, 1047, 0.22, 0.18)
+      tap(ac, out, t, pitch)
+      chime(ac, out, t + 0.02, 1319, 0.1, 0.12)
       break
     case 'promote':
-      knock(ac, out, t, move)
-      note(ac, out, t + 0.03, 784, 0.2, 0.12)
-      note(ac, out, t + 0.11, 1175, 0.2, 0.22)
+      tap(ac, out, t, pitch)
+      chime(ac, out, t + 0.03, 988, 0.09, 0.1)
+      chime(ac, out, t + 0.11, 1319, 0.09, 0.16)
       break
-    case 'wrong': {
-      // Just after the wrong move's own sound, which plays in the same frame.
-      const w = t + 0.07
-      const osc = ac.createOscillator()
-      osc.type = 'square'
-      osc.frequency.setValueAtTime(220, w)
-      osc.frequency.exponentialRampToValueAtTime(130, w + 0.2)
-      const low = ac.createBiquadFilter()
-      low.type = 'lowpass'
-      low.frequency.value = 900
-      osc.connect(low).connect(envelope(ac, out, w, 0.25, 0.25))
-      osc.start(w)
-      osc.stop(w + 0.27)
+    case 'wrong':
+      // Just after the wrong move's own tap, which plays in the same frame: a soft low dip.
+      chime(ac, out, t + 0.07, 330, 0.14, 0.09)
+      chime(ac, out, t + 0.15, 247, 0.14, 0.16)
       break
-    }
   }
 }
