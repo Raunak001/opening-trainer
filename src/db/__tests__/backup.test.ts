@@ -108,7 +108,7 @@ async function populated() {
   return { db, rep }
 }
 
-const roundTrip = async (backup: Backup, schema = 5) => parseBackup(serializeBackup(backup), schema)
+const roundTrip = async (backup: Backup, schema = 6) => parseBackup(serializeBackup(backup), schema)
 
 describe('export and restore', () => {
   it('round-trips every table exactly, Dates included', async () => {
@@ -125,6 +125,7 @@ describe('export and restore', () => {
       archives: 1,
       games: 1,
       puzzleAttempts: 1,
+      analyses: 0,
     })
 
     const target = openDb()
@@ -198,7 +199,7 @@ describe('parseBackup rejects files it cannot restore', () => {
   const valid = async () => JSON.parse(serializeBackup(await exportBackup(openDb(), T0)))
   const reason = (text: string) => {
     try {
-      parseBackup(text, 5)
+      parseBackup(text, 6)
       return 'accepted'
     } catch (err) {
       expect(err).toBeInstanceOf(BackupError)
@@ -223,10 +224,10 @@ describe('parseBackup rejects files it cannot restore', () => {
       'Unsupported backup format version 2.',
     )
     expect(reason(JSON.stringify({ ...(await valid()), schemaVersion: 2 }))).toBe(
-      'This backup is from database version 2; this app uses version 5.',
+      'This backup is from database version 2; this app uses version 6.',
     )
-    expect(reason(JSON.stringify({ ...(await valid()), schemaVersion: 6 }))).toBe(
-      'This backup is from database version 6; this app uses version 5.',
+    expect(reason(JSON.stringify({ ...(await valid()), schemaVersion: 7 }))).toBe(
+      'This backup is from database version 7; this app uses version 6.',
     )
   })
 
@@ -249,7 +250,7 @@ describe('parseBackup rejects files it cannot restore', () => {
     delete v.tables.archives
     delete v.tables.games
     delete v.tables.puzzleAttempts
-    const backup = parseBackup(JSON.stringify(v), 5)
+    const backup = parseBackup(JSON.stringify(v), 6)
     expect(backup.tables.games).toEqual([])
     const target = openDb()
     const counts = await restoreBackup(target, backup)

@@ -1,0 +1,397 @@
+/* Game review. Dark palette of the trainer; layout mimics chess.com's review screen. */
+.game-review {
+  --bar-width: 28px;
+}
+
+.game-review__board {
+  display: flex;
+  gap: 8px;
+  flex: none;
+  align-self: flex-start;
+  outline: none;
+}
+
+.trainer-layout.game-review .board {
+  width: min(
+    calc(100vh - 2 * var(--gutter)),
+    calc(100vw - var(--panel-width) - 4 * var(--gutter) - var(--bar-width)),
+    760px
+  );
+}
+
+/* Square tint in the mark's colour, over the yellow last-move highlight. */
+.game-review .board cg-board square.review-mark {
+  background-color: var(--mark-tint);
+}
+.review-mark--brilliant {
+  --mark-tint: rgba(27, 172, 166, 0.5);
+}
+.review-mark--great {
+  --mark-tint: rgba(92, 139, 176, 0.5);
+}
+.review-mark--best {
+  --mark-tint: rgba(129, 182, 76, 0.5);
+}
+.review-mark--excellent {
+  --mark-tint: rgba(150, 188, 75, 0.45);
+}
+.review-mark--good {
+  --mark-tint: rgba(149, 175, 138, 0.45);
+}
+.review-mark--book {
+  --mark-tint: rgba(168, 136, 101, 0.45);
+}
+.review-mark--inaccuracy {
+  --mark-tint: rgba(240, 193, 92, 0.5);
+}
+.review-mark--mistake {
+  --mark-tint: rgba(229, 143, 42, 0.5);
+}
+.review-mark--miss {
+  --mark-tint: rgba(238, 107, 85, 0.5);
+}
+.review-mark--blunder {
+  --mark-tint: rgba(202, 52, 49, 0.5);
+}
+
+.eval-bar {
+  position: relative;
+  flex: none;
+  width: var(--bar-width);
+  align-self: stretch;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #403d39;
+}
+
+.eval-bar__white {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  transition: height 0.3s ease;
+}
+
+.game-review__board--black .eval-bar__white {
+  top: 0;
+  bottom: auto;
+}
+
+.eval-bar__text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.eval-bar__text--white {
+  bottom: 4px;
+  color: #403d39;
+}
+
+.eval-bar__text--black {
+  top: 4px;
+  color: #ffffff;
+}
+
+.game-review__board--black .eval-bar__text--white {
+  top: 4px;
+  bottom: auto;
+}
+
+.game-review__board--black .eval-bar__text--black {
+  bottom: 4px;
+  top: auto;
+}
+
+.review-panel {
+  gap: 12px;
+  max-height: calc(100vh - 2 * var(--gutter));
+  overflow-y: auto;
+}
+
+.review-panel > * {
+  flex-shrink: 0;
+}
+
+.review-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.review-panel__header button {
+  padding: 6px 10px;
+}
+
+.review-panel__title {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.review-panel__link,
+.review-panel__muted {
+  color: var(--panel-muted);
+  font-size: 12px;
+}
+
+.review-panel__players {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+  text-align: center;
+}
+
+.review-panel__player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.review-panel__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.review-panel__acc {
+  min-width: 72px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.review-panel__acc--white {
+  background: #ffffff;
+  color: #312e2b;
+}
+
+.review-panel__acc--black {
+  background: #1f1e1c;
+  color: #ffffff;
+  border: 1px solid #4b4946;
+}
+
+.review-panel__acc-label {
+  grid-column: 1 / -1;
+  color: var(--panel-muted);
+  font-size: 12px;
+}
+
+.review-panel__progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--panel-raised);
+}
+
+.review-panel__progress progress {
+  flex: 1 1 100%;
+  accent-color: var(--panel-accent);
+}
+
+.review-panel__progress button {
+  padding: 6px 12px;
+}
+
+.review-panel__coach {
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid var(--coach-color, #4b4946);
+  background: var(--panel-raised);
+}
+
+.review-panel__coach--brilliant {
+  --coach-color: #1baca6;
+}
+.review-panel__coach--great {
+  --coach-color: #5c8bb0;
+}
+.review-panel__coach--best {
+  --coach-color: #81b64c;
+}
+.review-panel__coach--excellent {
+  --coach-color: #96bc4b;
+}
+.review-panel__coach--good {
+  --coach-color: #95af8a;
+}
+.review-panel__coach--book {
+  --coach-color: #a88865;
+}
+.review-panel__coach--inaccuracy {
+  --coach-color: #f0c15c;
+}
+.review-panel__coach--mistake {
+  --coach-color: #e58f2a;
+}
+.review-panel__coach--miss {
+  --coach-color: #ee6b55;
+}
+.review-panel__coach--blunder {
+  --coach-color: #ca3431;
+}
+
+.review-panel__headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.review-panel__eval {
+  margin-left: auto;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #262421;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.review-panel__line {
+  margin: 4px 0 0;
+  color: #dddddd;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.eval-graph {
+  width: 100%;
+  height: 90px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.eval-graph__black {
+  fill: #403d39;
+}
+
+.eval-graph__white {
+  fill: #ffffff;
+}
+
+.eval-graph__mid {
+  stroke: #888888;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.eval-graph__cursor {
+  stroke: #81b64c;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.review-moves {
+  max-height: 220px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border-radius: 6px;
+  background: #211f1c;
+}
+
+.review-moves__row {
+  display: grid;
+  grid-template-columns: 3em 1fr 1fr;
+  align-items: center;
+}
+
+.review-moves__row:nth-child(even) {
+  background: #2a2825;
+}
+
+.review-moves__number {
+  padding-left: 8px;
+  color: var(--panel-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.side-panel .review-moves__move {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px;
+  padding: 3px 6px;
+  background: transparent;
+  text-align: left;
+}
+
+.side-panel .review-moves__move[aria-current='true'] {
+  background: #4b4946;
+}
+
+.review-panel__nav {
+  display: flex;
+  gap: 6px;
+}
+
+.review-panel__nav button {
+  flex: 1;
+  height: 36px;
+}
+
+.side-panel .review-panel__primary {
+  background: #81b64c;
+  color: #ffffff;
+}
+
+.side-panel .review-panel__primary:hover:not(:disabled) {
+  background: #95c869;
+}
+
+.review-panel__summary {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.review-panel__summary th {
+  color: var(--panel-muted);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.review-panel__summary td {
+  padding: 3px 4px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.review-panel__summary-mark {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.mark-icon {
+  flex: none;
+}
+
+@media (max-width: 767px) {
+  .trainer-layout.game-review .board {
+    width: calc(100vw - 2 * var(--gutter) - var(--bar-width) - 8px);
+  }
+
+  .review-panel {
+    max-height: none;
+  }
+}

@@ -8,6 +8,7 @@ import type {
   Speed,
   TreeNode,
 } from '../repertoire'
+import type { Score } from '../engine/uci'
 import type { AppSettings } from './settings'
 
 /** One cached Lichess explorer response. */
@@ -65,6 +66,29 @@ export interface GameRow {
   sans: string[]
   /** Set once the game has been checked for automatic cards. */
   cards?: GameCardResult
+}
+
+/** One position's engine result in a game analysis. Scores are side-to-move POV. */
+export interface AnalysisEval {
+  score: Score
+  /** UCI; null when the side to move has no legal move. */
+  best: string | null
+  /** Principal variation in UCI, starting with `best`. */
+  pv: string[]
+  /** The engine's second choice, when there was one. */
+  second?: { move: string; score: Score }
+}
+
+/** Stockfish analysis of one imported game (src/analysis). Marks are derived, not stored. */
+export interface GameAnalysisRow {
+  /** `GameRow.id`. */
+  gameId: string
+  depth: number
+  analyzedAt: number
+  /** Index 0 is the start position, index i the position after `sans[i - 1]`. */
+  evals: AnalysisEval[]
+  /** Game accuracy per side (Lichess formula), 0–100. */
+  accuracy: { white: number; black: number }
 }
 
 /** A repertoire's definition. Its tree lives in `nodes`, one row per position. */
@@ -256,6 +280,7 @@ export class TrainerDB extends Dexie {
   games!: EntityTable<GameRow, 'id'>
   puzzles!: EntityTable<PuzzleRow, 'id'>
   puzzleAttempts!: EntityTable<PuzzleAttemptRow, 'id'>
+  analyses!: EntityTable<GameAnalysisRow, 'gameId'>
 
   constructor(name: string = DB_NAME) {
     super(name)
@@ -298,6 +323,14 @@ export class TrainerDB extends Dexie {
       })
       .upgrade(() => {
         // New tables only: nothing to transform.
+      })
+    // v6: Stockfish reviews of imported games.
+    this.version(6)
+      .stores({
+        analyses: 'gameId',
+      })
+      .upgrade(() => {
+        // New table only: nothing to transform.
       })
   }
 }

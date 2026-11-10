@@ -8,6 +8,7 @@ import {
   type TimeClass,
   type TrainerDB,
 } from '../db'
+import { GameReview } from '../analysis/GameReview'
 import { listRepertoires, loadRepertoire, type Repertoire } from '../repertoire/builder'
 import { getExplorerClient, type ExplorerClient } from '../repertoire/explorer'
 import { getChesscomClient, type ChesscomClient } from './chesscom'
@@ -80,6 +81,7 @@ export function ImportPage({
   const [color, setColor] = useState<ColorFilter>('both')
   const [minGapGames, setMinGapGames] = useState(2)
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
+  const [reviewing, setReviewing] = useState<GameRow>()
   const abort = useRef<AbortController>(undefined)
 
   useEffect(() => {
@@ -109,6 +111,11 @@ export function ImportPage({
       setStatus({ kind: 'error', message: String(err) }),
     )
   }
+
+  const accuracies = useLiveQuery(async () => {
+    const rows = await db.analyses.toArray()
+    return new Map(rows.map((r) => [r.gameId, r.accuracy]))
+  }, [db])
 
   // Live, so a rebuilt tree re-checks every game.
   const repertoires = useLiveQuery(() => loadAllRepertoires(db), [db])
@@ -204,6 +211,9 @@ export function ImportPage({
     timeClasses,
     color: color === 'both' ? undefined : color,
   })
+
+  if (reviewing)
+    return <GameReview game={reviewing} db={db} onBack={() => setReviewing(undefined)} />
 
   return (
     <main className="import">
@@ -337,12 +347,40 @@ export function ImportPage({
                   repName={repName}
                   cards={g.cards}
                 />
+                <ReviewCell
+                  accuracy={accuracies?.get(g.id)?.[g.color]}
+                  opponent={g.opponent}
+                  onReview={() => setReviewing(g)}
+                />
               </li>
             ))}
           </ol>
         </section>
       )}
     </main>
+  )
+}
+
+function ReviewCell({
+  accuracy,
+  opponent,
+  onReview,
+}: {
+  accuracy: number | undefined
+  opponent: string
+  onReview: () => void
+}) {
+  return (
+    <span className="import__review">
+      {accuracy !== undefined && (
+        <span className="import__muted" title="Your accuracy">
+          {accuracy.toFixed(1)}%
+        </span>
+      )}
+      <button type="button" onClick={onReview} aria-label={`Review game vs ${opponent}`}>
+        {accuracy !== undefined ? 'Review' : 'Analyze'}
+      </button>
+    </span>
   )
 }
 

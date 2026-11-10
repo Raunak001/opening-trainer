@@ -146,12 +146,19 @@
 /* date | game | deviation */
 .import__game {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr) minmax(0, 1.4fr);
+  grid-template-columns: 88px minmax(0, 1fr) minmax(0, 1.4fr) auto;
   align-items: center;
   gap: 4px 12px;
   min-height: 36px;
   padding: 4px 8px;
   border-radius: 4px;
+}
+
+.import__review {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .import__game:hover,

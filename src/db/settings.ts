@@ -77,6 +77,23 @@ export interface AppSettings {
     speeds: Speed[]
   }
   /** Board sounds. */
+  /** Full-game review of imported games (src/analysis). Losses are win% points (0–100). */
+  analysis: {
+    /** Stockfish depth per position (two lines per position). */
+    depth: number
+    /** A non-best move losing less than this is Excellent… */
+    excellent: number
+    /** …less than this Good… */
+    good: number
+    /** …less than this an Inaccuracy… */
+    inaccuracy: number
+    /** …less than this a Mistake; anything more is a Blunder. */
+    mistake: number
+    /** Great move: the best move, with the second-best losing at least this much. */
+    greatGap: number
+    /** Brilliant move: gives up at least this much material (pawns) and stays sound. */
+    minSacrifice: number
+  }
   sound: {
     enabled: boolean
     /** 0 (silent) to 1. */
@@ -102,6 +119,16 @@ export const DEFAULT_SETTINGS: AppSettings = {
   lessons: { depth: 18, multiPv: 5, acceptWithinCp: 30, mineDepth: 12 },
   // Same band as the builder's defaults.
   courses: { ratings: [1600, 1800], speeds: ['blitz', 'rapid'] },
+  // chess.com's published expected-points bands (0.02 / 0.05 / 0.10 / 0.20) on the win% scale.
+  analysis: {
+    depth: 14,
+    excellent: 2,
+    good: 5,
+    inaccuracy: 10,
+    mistake: 20,
+    greatGap: 20,
+    minSacrifice: 2,
+  },
   sound: { enabled: true, volume: 0.7 },
 }
 
@@ -121,6 +148,7 @@ export function mergeSettings(base: AppSettings, patch: SettingsPatch | undefine
     importer: { ...base.importer, ...patch?.importer },
     lessons: { ...base.lessons, ...patch?.lessons },
     courses: { ...base.courses, ...patch?.courses },
+    analysis: { ...base.analysis, ...patch?.analysis },
     sound: { ...base.sound, ...patch?.sound },
   }
 }

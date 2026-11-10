@@ -53,7 +53,7 @@ describe('schema', () => {
   it('has every table from the plan, with cards indexed on due', async () => {
     const db = new TrainerDB(dbName())
     await db.open()
-    expect(db.verno).toBe(5)
+    expect(db.verno).toBe(6)
     expect(db.tables.map((t) => t.name).sort()).toEqual(
       [
         'archives',
@@ -64,6 +64,7 @@ describe('schema', () => {
         'nodes',
         'puzzleAttempts',
         'puzzles',
+        'analyses',
         'repertoires',
         'reviewLogs',
         'settings',
@@ -77,7 +78,7 @@ describe('schema', () => {
 })
 
 describe('migrations', () => {
-  it('upgrades v1 to v5 keeping the explorer cache', async () => {
+  it('upgrades v1 to v6 keeping the explorer cache', async () => {
     const name = dbName()
     const v1 = new Dexie(name)
     v1.version(1).stores({ explorerCache: 'key, positionKey' })
@@ -92,7 +93,7 @@ describe('migrations', () => {
 
     const db = new TrainerDB(name)
     expect(await db.explorerCache.get('k')).toMatchObject({ positionKey: 'p', fetchedAt: 1 })
-    expect(db.verno).toBe(5)
+    expect(db.verno).toBe(6)
     db.close()
   })
 
@@ -120,7 +121,7 @@ describe('migrations', () => {
     db.close()
   })
 
-  it('upgrades v4 to v5 keeping games and adding the puzzle tables', async () => {
+  it('upgrades v4 to v6 keeping games and adding the puzzle and review tables', async () => {
     const name = dbName()
     const v4 = new Dexie(name)
     v4.version(4).stores({
@@ -147,7 +148,8 @@ describe('migrations', () => {
     expect(await db.puzzleAttempts.count()).toBe(0)
     expect(db.puzzles.schema.idxByName.rating).toBeDefined()
     expect(db.puzzleAttempts.schema.idxByName.at).toBeDefined()
-    expect(db.verno).toBe(5)
+    expect(await db.analyses.count()).toBe(0)
+    expect(db.verno).toBe(6)
     db.close()
   })
 

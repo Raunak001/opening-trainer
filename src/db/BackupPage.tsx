@@ -31,6 +31,7 @@ const TABLE_LABELS: Record<BackupTable, string> = {
   archives: 'chess.com months fetched',
   games: 'Imported games',
   puzzleAttempts: 'Puzzle attempts',
+  analyses: 'Game reviews',
 }
 
 /** Default file saver: a temporary download link. */
