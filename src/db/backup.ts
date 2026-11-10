@@ -16,6 +16,8 @@ export const BACKUP_TABLES = [
   'games',
   'puzzleAttempts',
   'analyses',
+  'coordStats',
+  'coordRuns',
 ] as const
 
 export type BackupTable = (typeof BACKUP_TABLES)[number]
@@ -33,6 +35,8 @@ const PRIMARY_KEY: Record<BackupTable, string> = {
   games: 'id',
   puzzleAttempts: 'id',
   analyses: 'gameId',
+  coordStats: 'key',
+  coordRuns: 'id',
 }
 
 /** Schema version that introduced each table. Older backups restore with those tables empty. */
@@ -41,6 +45,8 @@ const TABLE_SINCE: Partial<Record<BackupTable, number>> = {
   games: 4,
   puzzleAttempts: 5,
   analyses: 6,
+  coordStats: 7,
+  coordRuns: 7,
 }
 
 /** Oldest schema version whose backups still restore (later versions only added tables). */

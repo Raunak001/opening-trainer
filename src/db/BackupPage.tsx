@@ -32,6 +32,8 @@ const TABLE_LABELS: Record<BackupTable, string> = {
   games: 'Imported games',
   puzzleAttempts: 'Puzzle attempts',
   analyses: 'Game reviews',
+  coordStats: 'Coordinate square stats',
+  coordRuns: 'Coordinate rounds',
 }
 
 /** Default file saver: a temporary download link. */

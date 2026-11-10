@@ -53,7 +53,7 @@ describe('schema', () => {
   it('has every table from the plan, with cards indexed on due', async () => {
     const db = new TrainerDB(dbName())
     await db.open()
-    expect(db.verno).toBe(6)
+    expect(db.verno).toBe(7)
     expect(db.tables.map((t) => t.name).sort()).toEqual(
       [
         'archives',
@@ -65,6 +65,8 @@ describe('schema', () => {
         'puzzleAttempts',
         'puzzles',
         'analyses',
+        'coordRuns',
+        'coordStats',
         'repertoires',
         'reviewLogs',
         'settings',
@@ -93,7 +95,7 @@ describe('migrations', () => {
 
     const db = new TrainerDB(name)
     expect(await db.explorerCache.get('k')).toMatchObject({ positionKey: 'p', fetchedAt: 1 })
-    expect(db.verno).toBe(6)
+    expect(db.verno).toBe(7)
     db.close()
   })
 
@@ -149,7 +151,10 @@ describe('migrations', () => {
     expect(db.puzzles.schema.idxByName.rating).toBeDefined()
     expect(db.puzzleAttempts.schema.idxByName.at).toBeDefined()
     expect(await db.analyses.count()).toBe(0)
-    expect(db.verno).toBe(6)
+    expect(await db.coordStats.count()).toBe(0)
+    expect(await db.coordRuns.count()).toBe(0)
+    expect(db.coordStats.schema.idxByName.mode).toBeDefined()
+    expect(db.verno).toBe(7)
     db.close()
   })
 

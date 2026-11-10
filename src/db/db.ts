@@ -235,6 +235,35 @@ export interface PuzzleAttemptRow {
   durationMs: number
 }
 
+/** Coordinate drills (T10.3). Only find/name keep per-square stats. */
+export type DrillMode = 'find' | 'name'
+export type CoordDrill = DrillMode | 'move' | 'visualize'
+
+/** One drill's record on one square from one side (T10.2). */
+export interface CoordStatRow {
+  /** `${mode}:${view}:${square}` */
+  key: string
+  mode: DrillMode
+  view: 'white' | 'black'
+  square: string
+  attempts: number
+  misses: number
+  /** Summed time of the correct answers. */
+  correctMs: number
+  lastAt: number
+}
+
+/** One finished coordinate round (T10.2). */
+export interface CoordRunRow {
+  id?: number
+  drill: CoordDrill
+  view: 'white' | 'black'
+  at: Date
+  correct: number
+  wrong: number
+  durationMs: number
+}
+
 /** Repertoire rows saved by v2 carried the whole tree inline. */
 interface V2RepertoireRow extends Omit<RepertoireRow, 'rootKey' | 'positionCount'> {
   tree?: RepertoireTree
@@ -281,6 +310,8 @@ export class TrainerDB extends Dexie {
   puzzles!: EntityTable<PuzzleRow, 'id'>
   puzzleAttempts!: EntityTable<PuzzleAttemptRow, 'id'>
   analyses!: EntityTable<GameAnalysisRow, 'gameId'>
+  coordStats!: EntityTable<CoordStatRow, 'key'>
+  coordRuns!: EntityTable<CoordRunRow, 'id'>
 
   constructor(name: string = DB_NAME) {
     super(name)
@@ -331,6 +362,15 @@ export class TrainerDB extends Dexie {
       })
       .upgrade(() => {
         // New table only: nothing to transform.
+      })
+    // v7 (T10.2): coordinate drill stats and rounds.
+    this.version(7)
+      .stores({
+        coordStats: 'key, mode, view',
+        coordRuns: '++id, drill, at',
+      })
+      .upgrade(() => {
+        // New tables only: nothing to transform.
       })
   }
 }

@@ -105,10 +105,28 @@ async function populated() {
     mistakes: 0,
     durationMs: 8000,
   })
+  await db.coordStats.put({
+    key: 'find:white:e4',
+    mode: 'find',
+    view: 'white',
+    square: 'e4',
+    attempts: 3,
+    misses: 1,
+    correctMs: 2400,
+    lastAt: 1,
+  })
+  await db.coordRuns.add({
+    drill: 'find',
+    view: 'white',
+    at: T0,
+    correct: 21,
+    wrong: 2,
+    durationMs: 30_000,
+  })
   return { db, rep }
 }
 
-const roundTrip = async (backup: Backup, schema = 6) => parseBackup(serializeBackup(backup), schema)
+const roundTrip = async (backup: Backup, schema = 7) => parseBackup(serializeBackup(backup), schema)
 
 describe('export and restore', () => {
   it('round-trips every table exactly, Dates included', async () => {
@@ -126,6 +144,8 @@ describe('export and restore', () => {
       games: 1,
       puzzleAttempts: 1,
       analyses: 0,
+      coordStats: 1,
+      coordRuns: 1,
     })
 
     const target = openDb()
@@ -199,7 +219,7 @@ describe('parseBackup rejects files it cannot restore', () => {
   const valid = async () => JSON.parse(serializeBackup(await exportBackup(openDb(), T0)))
   const reason = (text: string) => {
     try {
-      parseBackup(text, 6)
+      parseBackup(text, 7)
       return 'accepted'
     } catch (err) {
       expect(err).toBeInstanceOf(BackupError)
@@ -224,10 +244,10 @@ describe('parseBackup rejects files it cannot restore', () => {
       'Unsupported backup format version 2.',
     )
     expect(reason(JSON.stringify({ ...(await valid()), schemaVersion: 2 }))).toBe(
-      'This backup is from database version 2; this app uses version 6.',
+      'This backup is from database version 2; this app uses version 7.',
     )
-    expect(reason(JSON.stringify({ ...(await valid()), schemaVersion: 7 }))).toBe(
-      'This backup is from database version 7; this app uses version 6.',
+    expect(reason(JSON.stringify({ ...(await valid()), schemaVersion: 8 }))).toBe(
+      'This backup is from database version 8; this app uses version 7.',
     )
   })
 
@@ -250,7 +270,10 @@ describe('parseBackup rejects files it cannot restore', () => {
     delete v.tables.archives
     delete v.tables.games
     delete v.tables.puzzleAttempts
-    const backup = parseBackup(JSON.stringify(v), 6)
+    delete v.tables.analyses
+    delete v.tables.coordStats
+    delete v.tables.coordRuns
+    const backup = parseBackup(JSON.stringify(v), 7)
     expect(backup.tables.games).toEqual([])
     const target = openDb()
     const counts = await restoreBackup(target, backup)

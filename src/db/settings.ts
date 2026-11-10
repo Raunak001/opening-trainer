@@ -94,6 +94,13 @@ export interface AppSettings {
     /** Brilliant move: gives up at least this much material (pawns) and stays sound. */
     minSacrifice: number
   }
+  /** Coordinate drills (Phase 10). */
+  coordinates: {
+    /** Length of a Find / Name round. */
+    roundSeconds: number
+    /** Questions in a Play the move / Visualize round. */
+    questions: number
+  }
   sound: {
     enabled: boolean
     /** 0 (silent) to 1. */
@@ -129,6 +136,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     greatGap: 20,
     minSacrifice: 2,
   },
+  coordinates: { roundSeconds: 30, questions: 10 },
   sound: { enabled: true, volume: 0.7 },
 }
 
@@ -149,6 +157,7 @@ export function mergeSettings(base: AppSettings, patch: SettingsPatch | undefine
     lessons: { ...base.lessons, ...patch?.lessons },
     courses: { ...base.courses, ...patch?.courses },
     analysis: { ...base.analysis, ...patch?.analysis },
+    coordinates: { ...base.coordinates, ...patch?.coordinates },
     sound: { ...base.sound, ...patch?.sound },
   }
 }
